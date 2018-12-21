@@ -1,0 +1,16 @@
+This file just contains notes I periodically take as part of the brainstorming
+process and is roughly divided into the different sections of compilation, with
+each section elaborating on design decisions, etc.
+
+This document will be changed arbitrarily and isn't a formal record of my work
+on the compiler.
+
+Lexer
+  - Read a .ash file into a string
+  - Convert the file into a list of tokens
+      - token type
+      - attributes
+      - line number range (for debugging)
+
+  - Make a version with ocamllex, one without (for practice)
+      
