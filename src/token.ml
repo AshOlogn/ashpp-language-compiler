@@ -1,6 +1,6 @@
 type token_type = 
 
-  (*Operators and Symbols (in order of precedence *)
+  (*Operators and Symbols (in order of precedence) *)
   LEFT_PAREN | RIGHT_PAREN | LEFT_BRACKET | RIGHT_BRACKET |
   LEFT_BRACE | RIGHT_BRACE | PERIOD | ADD | SUBTRACT | NOT | BIT_NOT
 
@@ -25,7 +25,7 @@ type token_type =
 
   | COMMA | SEMICOLON | RIGHTARROW 
 
-  (* Types, int is int64_t *)
+  (* Types, int is just int64_t for now *)
   | INT of int | CHAR of char | DOUBLE of float | BOOL of bool | STRING of string | VOID | VARIABLE of string
 
   (* Reserved Words *)
@@ -37,4 +37,12 @@ type token_type =
 
   (* end of program| invalid Token *)
   | END | INVALID
-;;
+[@@deriving show]
+
+type token = 
+  {
+    ttype : token_type;
+    startLine : int;
+    endLine : int;
+  }
+[@@deriving show]
