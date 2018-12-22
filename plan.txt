@@ -5,12 +5,16 @@ each section elaborating on design decisions, etc.
 This document will be changed arbitrarily and isn't a formal record of my work
 on the compiler.
 
+I plan on making a "commercial" and personal version of the compiler. In the personal
+one, I implement everything manually (lexer, parser, etc.) myself just to learn the
+OCaml language better. In the commercial one, I use existing tools like ocamlyacc.
+
 Lexer
-  - Read a .ash file into a string
-  - Convert the file into a list of tokens
+  - Read a .app file into a string
+  - Convert the file into a list of tokens (variant type)
       - token type
       - attributes
       - line number range (for debugging)
-
+    
   - Make a version with ocamllex, one without (for practice)
       
