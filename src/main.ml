@@ -1,5 +1,4 @@
-open Stdio
 open Token
+open Lexer
 
-let () = printf "show_token_type: %s\nshow_token: %s\n" 
-                    (show_token_type (LEFT_PAREN)) (show_token {ttype = LEFT_BRACE; startLine = 5; endLine = 10;})
+let () = print_token_list (lex_help "int x = 5 string y = \"abcdef\"" 0 0);;

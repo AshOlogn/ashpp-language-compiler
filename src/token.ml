@@ -26,11 +26,13 @@ type token_type =
   | COMMA | SEMICOLON | RIGHTARROW 
 
   (* Types, int is just int64_t for now *)
-  | INT of int | CHAR of char | DOUBLE of float | BOOL of bool | STRING of string | VOID | VARIABLE of string
+  | INT of int | CHAR of char | DOUBLE of float | BOOL of bool | STRING of string | VARIABLE of string
 
   (* Reserved Words *)
   | FOR | WHILE | DO | IF | ELIF | ELSE | BREAK | SWITCH | CASE
   | CLASS | EXTENDS | FUN | RETURN | NEW | PRINT | PRINTLN
+  | INT_T | CHAR_T | DOUBLE_T | BOOL_T | STRING_T | VOID_T  
+
 
   (* Boolean literals *)
   | TRUE | FALSE
@@ -46,3 +48,6 @@ type token =
     endLine : int;
   }
 [@@deriving show]
+
+let print_token tok = Printf.printf "%s\n" (show_token tok);;
+let print_token_list tList = List.iter print_token tList;;
