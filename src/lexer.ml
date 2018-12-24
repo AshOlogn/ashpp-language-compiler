@@ -1,10 +1,10 @@
 open Token
 open Base
 
-(* TODO: char literal, += stuff, exponent, string literals, numbers, identifiers, bounds checking, EFFICIENCY *)
+(* TODO: char literal, += stuff, exponent, bounds checking, EFFICIENCY *)
 
 (* Helper functions and variables *)
-let (^$) c s = s ^ Char.escaped c (* append *)
+let (^$) c s = s ^ Char.escaped c;; (* append *)
 let keywords = [("for", FOR); ("while", WHILE); ("do", DO); ("if", IF); ("elif", ELIF); ("else", ELSE); ("break", BREAK);
                 ("switch", SWITCH); ("case", CASE); ("class", CLASS); ("extends", EXTENDS); ("fun", FUN); ("return", RETURN); 
                 ("new", NEW); ("print", PRINT); ("println", PRINTLN); ("int", INT_T); ("char", CHAR_T); ("double", DOUBLE_T); 
@@ -47,19 +47,106 @@ let rec lex_help code index line =
     | ':'       -> { ttype = COLON; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | ';'       -> { ttype = SEMICOLON; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | ','       -> { ttype = COMMA; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '+'       -> { ttype = ADD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '-'       -> { ttype = SUBTRACT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '*'       -> { ttype = MULTIPLY; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '/'       -> { ttype = DIVIDE; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '%'       -> { ttype = MOD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '!'       -> { ttype = NOT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '+'       -> 
+        if index+1 < String.length code && phys_equal code.[index+1] '=' then 
+            { ttype = ADD_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = ADD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '-'       -> 
+        if index+1 < String.length code && phys_equal code.[index+1] '=' then 
+            { ttype = SUBTRACT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '>' then 
+            { ttype = RIGHTARROW; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = SUBTRACT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)    
+    | '*'       ->
+        if index+2 < String.length code && phys_equal code.[index+1] '*' && phys_equal code.[index+2] '=' then
+            { ttype = EXPONENT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '*' then
+            { ttype = EXPONENT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = MULTIPLY_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = MULTIPLY; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '/'       ->
+        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = DIVIDE_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '*' then
+            (* handle nested multiline comments *)
+            let depth = ref 1 in
+            let i = ref (index+2) in
+            let cLine = ref line in
+            while !depth > 0 do begin 
+                if phys_equal code.[!i] '/' && phys_equal code.[!i+1] '*' then begin
+                    depth := !depth+1;
+                    i := !i+2;
+                    end
+                else if phys_equal code.[!i] '*' && phys_equal code.[!i+1] '/' then begin
+                    depth := !depth-1;
+                    i := !i+2;
+                    end
+                else
+                    cLine := if phys_equal code.[!i] '\n' then !cLine+1 else !cLine;
+                    i := !i+1;
+            end done;
+            lex_help code !i !cLine
+        else 
+            { ttype = DIVIDE; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '%'       -> 
+        if index+1 < String.length code && phys_equal code.[index+1] '%' then
+            { ttype = MOD_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+        { ttype = MOD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '!'       -> 
+        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = NOT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = NOT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '~'       -> { ttype = BIT_NOT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '<'       -> { ttype = LESS; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '>'       -> { ttype = GREATER; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '='       -> { ttype = EQ; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '&'       -> { ttype = BIT_AND; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '^'       -> { ttype = BIT_XOR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
-    | '|'       -> { ttype = BIT_OR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '<'       -> 
+        if index+2 < String.length code && phys_equal code.[index+1] '<' && phys_equal code.[index+2] '=' then
+            { ttype = BIT_LEFT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '<' then
+            { ttype = BIT_LEFT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = LESS_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = LESS; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '>'       -> 
+        if index+2 < String.length code && phys_equal code.[index+1] '>' && phys_equal code.[index+2] '=' then
+            { ttype = BIT_RIGHT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '>' then
+            { ttype = BIT_RIGHT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = GREATER_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = GREATER; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '='       ->
+        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = EQ_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = EQ; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
+    | '&'       ->
+        if index+1 < String.length code && phys_equal code.[index+1] '&' then
+            { ttype = AND; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = AND_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = BIT_AND; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
+    | '^'       ->
+        if index+1 < String.length code && phys_equal code.[index+1] '^' then
+            { ttype = XOR; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = XOR_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = BIT_XOR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
+    | '|'       ->
+        if index+1 < String.length code && phys_equal code.[index+1] '|' then
+            { ttype = OR; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+            { ttype = OR_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
+        else
+            { ttype = BIT_OR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
 
     (* string literals *)
     | '"'       -> 
@@ -91,7 +178,7 @@ let rec lex_help code index line =
             { ttype = DOUBLE (Float.of_string !literal); startLine = line; endLine = line; } :: (lex_help code (!i+1) line)
     
     (*identifiers and keywords *)
-    | 'a'..'z' | 'A'..'Z' | '\'' | '_' -> 
+    | 'a'..'z' | 'A'..'Z' | '_' -> 
         let i = ref index in
         let str = ref "" in
         while (!i < String.length code) && (phys_equal code.[!i] '_' || Char.is_alphanum code.[!i]) do begin  
