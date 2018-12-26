@@ -16,12 +16,13 @@ let lined_message line msg = Printf.sprintf "line %d: %s" line msg;;
 
 (* lexing function *)
 let rec lex_help code index line = 
-    if index >= (String.length code) then [{ttype = END; startLine = line; endLine = line; }] else
+    let code_len = String.length code in
+    if index >= (code_len) then [{ttype = END; startLine = line; endLine = line; }] else
     if Char.is_whitespace code.[index] then 
         (* trim the whitespace *)
         let i = ref index in
         let cLine = ref line in
-        while !i < String.length code && Char.is_whitespace code.[!i] do begin
+        while !i < code_len && Char.is_whitespace code.[!i] do begin
             cLine := if (phys_equal code.[!i] '\n') then !cLine + 1 else !cLine;
             i := !i + 1;
         end done;
@@ -39,42 +40,42 @@ let rec lex_help code index line =
     | ';'       -> { ttype = SEMICOLON; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | ','       -> { ttype = COMMA; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '+'       -> 
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then 
+        if index+1 < code_len && phys_equal code.[index+1] '=' then 
             { ttype = ADD_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = ADD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '-'       -> 
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then 
+        if index+1 < code_len && phys_equal code.[index+1] '=' then 
             { ttype = SUBTRACT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '>' then 
+        else if index+1 < code_len && phys_equal code.[index+1] '>' then 
             { ttype = RIGHTARROW; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = SUBTRACT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)    
     | '*'       ->
-        if index+2 < String.length code && phys_equal code.[index+1] '*' && phys_equal code.[index+2] '=' then
+        if index+2 < code_len && phys_equal code.[index+1] '*' && phys_equal code.[index+2] '=' then
             { ttype = EXPONENT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '*' then
+        else if index+1 < code_len && phys_equal code.[index+1] '*' then
             { ttype = EXPONENT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = MULTIPLY_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = MULTIPLY; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '/'       ->
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = DIVIDE_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '*' then
+        else if index+1 < code_len && phys_equal code.[index+1] '*' then
             (* handle nested multiline comments *)
             let depth = ref 1 in
             let i = ref (index+2) in
             let cLine = ref line in
             while !depth > 0 do begin
-                if !i >= String.length code then
+                if !i >= code_len then
                     raise (Error_lexer (lined_message !cLine "comment not closed"))
-                else if !i+1 < String.length code && phys_equal code.[!i] '/' && phys_equal code.[!i+1] '*' then begin
+                else if !i+1 < code_len && phys_equal code.[!i] '/' && phys_equal code.[!i+1] '*' then begin
                     depth := !depth+1;
                     i := !i+2;
                     end
-                else if !i+1 < String.length code && phys_equal code.[!i] '*' && phys_equal code.[!i+1] '/' then begin
+                else if !i+1 < code_len && phys_equal code.[!i] '*' && phys_equal code.[!i+1] '/' then begin
                     depth := !depth-1;
                     i := !i+2;
                     end
@@ -86,57 +87,57 @@ let rec lex_help code index line =
         else 
             { ttype = DIVIDE; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '%'       -> 
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = MOD_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = MOD; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '!'       -> 
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = NOT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = NOT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '~'       -> { ttype = BIT_NOT; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '<'       -> 
-        if index+2 < String.length code && phys_equal code.[index+1] '<' && phys_equal code.[index+2] '=' then
+        if index+2 < code_len && phys_equal code.[index+1] '<' && phys_equal code.[index+2] '=' then
             { ttype = BIT_LEFT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '<' then
+        else if index+1 < code_len && phys_equal code.[index+1] '<' then
             { ttype = BIT_LEFT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = LESS_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = LESS; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '>'       -> 
-        if index+2 < String.length code && phys_equal code.[index+1] '>' && phys_equal code.[index+2] '=' then
+        if index+2 < code_len && phys_equal code.[index+1] '>' && phys_equal code.[index+2] '=' then
             { ttype = BIT_RIGHT_EQ; startLine = line; endLine = line; } :: (lex_help code (index+3) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '>' then
+        else if index+1 < code_len && phys_equal code.[index+1] '>' then
             { ttype = BIT_RIGHT; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = GREATER_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = GREATER; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '='       ->
-        if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = EQ_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = EQ; startLine = line; endLine = line; } :: (lex_help code (index+1) line)
     | '&'       ->
-        if index+1 < String.length code && phys_equal code.[index+1] '&' then
+        if index+1 < code_len && phys_equal code.[index+1] '&' then
             { ttype = AND; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = AND_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = BIT_AND; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
     | '^'       ->
-        if index+1 < String.length code && phys_equal code.[index+1] '^' then
+        if index+1 < code_len && phys_equal code.[index+1] '^' then
             { ttype = XOR; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = XOR_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = BIT_XOR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
     | '|'       ->
-        if index+1 < String.length code && phys_equal code.[index+1] '|' then
+        if index+1 < code_len && phys_equal code.[index+1] '|' then
             { ttype = OR; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
-        else if index+1 < String.length code && phys_equal code.[index+1] '=' then
+        else if index+1 < code_len && phys_equal code.[index+1] '=' then
             { ttype = OR_EQ; startLine = line; endLine = line; } :: (lex_help code (index+2) line)
         else
             { ttype = BIT_OR; startLine = line; endLine = line; } :: (lex_help code (index+1) line)            
@@ -148,7 +149,7 @@ let rec lex_help code index line =
         let str = ref "" in
 
         (* Include some hacky bounds checking here *)
-        if !i = String.length code then
+        if !i = code_len then
            raise (Error_lexer (lined_message !cLine "string literal not closed with \""));
         while not (phys_equal code.[!i] '"') do begin
             (* Update line number in source if new line is found *)
@@ -156,7 +157,7 @@ let rec lex_help code index line =
             str := !str ^ (Char.to_string code.[!i]);
             i := !i + 1;
 
-            if !i = String.length code then
+            if !i = code_len then
                 raise (Error_lexer (lined_message !cLine "string literal not closed with \""));
         end done;
         { ttype = STRING !str; startLine = line; endLine = !cLine; } :: (lex_help code !i !cLine)
@@ -166,7 +167,7 @@ let rec lex_help code index line =
         let i = ref index in
         let num_decimals = ref 0 in
         let literal = ref "" in
-        while (!i < String.length code) && (phys_equal code.[!i] '.' || Char.is_digit code.[!i]) do begin
+        while (!i < code_len) && (phys_equal code.[!i] '.' || Char.is_digit code.[!i]) do begin
             (* Increment so we know it's a double *)
             if phys_equal code.[!i] '.' then
                 (* If we already have a decimal, error *)
@@ -188,7 +189,7 @@ let rec lex_help code index line =
     | 'a'..'z' | 'A'..'Z' | '_' -> 
         let i = ref index in
         let str = ref "" in
-        while (!i < String.length code) && (phys_equal code.[!i] '_' || Char.is_alphanum code.[!i]) do begin  
+        while (!i < code_len) && (phys_equal code.[!i] '_' || Char.is_alphanum code.[!i]) do begin  
             str := !str ^ (Char.to_string code.[!i]);
             i := !i + 1;
         end done;
