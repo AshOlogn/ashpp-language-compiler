@@ -1,30 +1,20 @@
 open Token
 open Base
-open Exceptions
 
-(* TODO: char literal, EFFICIENCY *)
+(* append string to another string *)
+let (^$) c s = s ^ Char.escaped c;; 
 
-(* Helper functions and variables *)
-let (^$) c s = s ^ Char.escaped c;; (* append *)
-let keywords = [("for", FOR); ("while", WHILE); ("do", DO); ("if", IF); ("elif", ELIF); ("else", ELSE); ("break", BREAK);
+let keywords_map = Map.of_alist_exn (module String) [("for", FOR); ("while", WHILE); ("do", DO); ("if", IF); ("elif", ELIF); ("else", ELSE); ("break", BREAK);
                 ("switch", SWITCH); ("case", CASE); ("class", CLASS); ("extends", EXTENDS); ("fun", FUN); ("return", RETURN); 
                 ("new", NEW); ("print", PRINT); ("println", PRINTLN); ("int", INT_T); ("char", CHAR_T); ("double", DOUBLE_T); 
                 ("bool", BOOL_T); ("string", STRING_T); ("void", VOID_T); ("true", TRUE); ("false", FALSE)];;
 
-let rec string_to_token_helper list str =
-    match list with
-    | (s, tok) :: xs   -> if String.equal str s then tok else (string_to_token_helper xs str)
-    | []               -> VARIABLE str
+(* Exceptions in lexer *)
+exception Error_lexer of string;;
 
-let string_to_token str = string_to_token_helper keywords str
+let lined_message line msg = Printf.sprintf "line %d: %s" line msg;;
 
-let is_single_char_token c  = 
-    match c with
-    | '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '!' | '=' | '<' | '>'
-    | '?' | ':' | '.' | ',' | ';' | '(' | ')' | '[' | ']' | '{'
-    | '}' -> true
-    |  _  -> false
-
+(* lexing function *)
 let rec lex_help code index line = 
     if index >= (String.length code) then [{ttype = END; startLine = line; endLine = line; }] else
     if Char.is_whitespace code.[index] then 
@@ -202,6 +192,9 @@ let rec lex_help code index line =
             str := !str ^ (Char.to_string code.[!i]);
             i := !i + 1;
         end done;
-        {ttype = string_to_token !str; startLine = line; endLine = line }:: (lex_help code !i line) 
+        let ttype = match Map.find keywords_map !str with
+                    | Some opt  -> opt
+                    | None      -> VARIABLE !str
+        in {ttype = ttype; startLine = line; endLine = line }:: (lex_help code !i line) 
 
     | _ -> raise (Error_lexer (lined_message line "undefined character found" ))
