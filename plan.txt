@@ -3,11 +3,7 @@ process and is roughly divided into the different sections of compilation, with
 each section elaborating on design decisions, etc.
 
 This document will be changed arbitrarily and isn't a formal record of my work
-on the compiler.
-
-I plan on making a "commercial" and personal version of the compiler. In the personal
-one, I implement everything manually (lexer, parser, etc.) myself just to learn the
-OCaml language better. In the commercial one, I use existing tools like ocamlyacc.
+on the compiler. Once I'm done, I'll make a formal write-up of
 
 Lexer
   - Read a .app file into a string
@@ -15,6 +11,21 @@ Lexer
       - token type
       - attributes
       - line number range (for debugging)
-    
-  - Make a version with ocamllex, one without (for practice)
-      
+
+Grammar
+In this language, I need a mini-grammar to express types (denoted by T), so that recursive types like
+arrays, functions, etc. can be properly supported. In the original Ash language, these
+things were hard-coded and extremely clunky.
+
+The following describes the grammar of my entire language. Comments are denoted on the side with -- 
+(gotta love Haskell-style) and aren't a part of the grammar.
+
+
+S - statement
+E - expression
+
+S =   if E S else S 
+    | while E S
+    | for(E; E; E) S
+    | T id = E        -- variable declaration with type
+    | id = E          -- variable assignment  
