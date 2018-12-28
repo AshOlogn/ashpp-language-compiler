@@ -4,11 +4,6 @@ open Base
 (* append string to another string *)
 let (^$) c s = s ^ Char.escaped c;; 
 
-let keywords_map = Map.of_alist_exn (module String) [("for", FOR); ("while", WHILE); ("do", DO); ("if", IF); ("elif", ELIF); ("else", ELSE); ("break", BREAK);
-                ("switch", SWITCH); ("case", CASE); ("class", CLASS); ("extends", EXTENDS); ("fun", FUN); ("return", RETURN); 
-                ("new", NEW); ("print", PRINT); ("println", PRINTLN); ("int", INT_T); ("char", CHAR_T); ("double", DOUBLE_T); 
-                ("bool", BOOL_T); ("string", STRING_T); ("void", VOID_T); ("true", TRUE); ("false", FALSE)];;
-
 (* Exceptions in lexer *)
 exception Error_lexer of string;;
 

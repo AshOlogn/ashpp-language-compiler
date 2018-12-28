@@ -1,4 +1,4 @@
-type token_type = 
+type token = 
 
   (*Operators and Symbols (in order of precedence) *)
   LEFT_PAREN | RIGHT_PAREN | LEFT_BRACKET | RIGHT_BRACKET |
@@ -41,13 +41,18 @@ type token_type =
   | END | INVALID
 [@@deriving show]
 
-type token = 
+type token_struct = 
   {
-    ttype : token_type;
+    ttype : token;
     startLine : int;
     endLine : int;
   }
 [@@deriving show]
 
-let print_token tok = Printf.printf "%s\n" (show_token tok);;
+let keywords_map = Base.Map.of_alist_exn (module Base.String) [("for", FOR); ("while", WHILE); ("do", DO); ("if", IF); ("elif", ELIF); ("else", ELSE); ("break", BREAK);
+                ("switch", SWITCH); ("case", CASE); ("class", CLASS); ("extends", EXTENDS); ("fun", FUN); ("return", RETURN); 
+                ("new", NEW); ("print", PRINT); ("println", PRINTLN); ("int", INT_T); ("char", CHAR_T); ("double", DOUBLE_T); 
+                ("bool", BOOL_T); ("string", STRING_T); ("void", VOID_T); ("true", TRUE); ("false", FALSE)];;
+
+let print_token tok = Printf.printf "%s\n" (show_token_struct tok);;
 let print_token_list tList = List.iter print_token tList;;
