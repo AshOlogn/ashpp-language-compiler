@@ -4,6 +4,6 @@
 
 (executable
   (name      main)
-  (libraries base stdio)
+  (libraries base core stdio)
   (preprocess (pps ppx_deriving.show))
 )

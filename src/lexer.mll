@@ -2,7 +2,7 @@
 open Token
 exception Error_lexer of string
 
-let parse_id = match Base.Map.find keywords_map str with
+let parse_id str = match Base.Map.find keywords_map str with
               | Some opt  -> opt
               | None      -> VARIABLE str
 }
@@ -40,8 +40,8 @@ rule read = parse
   | '='  { EQ }
   | int { INT (int_of_string (Lexing.lexeme lexbuf)) }
   | float { DOUBLE (float_of_string (Lexing.lexeme lexbuf)) }
-  | string { STRING Lexing.lexeme }
-  | id { parse_id Lexing.lexeme }
+  | string { STRING (Lexing.lexeme lexbuf) }
+  | id { parse_id (Lexing.lexeme lexbuf) }
   | _ { raise (Error_lexer ("Invalid character found: " ^ Lexing.lexeme lexbuf)) }
   | eof { END }  
 
