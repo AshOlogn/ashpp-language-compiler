@@ -2,6 +2,11 @@
   (modules lexer)
 )
 
+(menhir
+  (modules parser)
+  (flags ("-la" "2"))
+)
+
 (executable
   (name      main)
   (libraries base core stdio)
