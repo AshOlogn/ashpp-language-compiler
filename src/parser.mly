@@ -52,22 +52,30 @@
 let main := 
   ~ = e; END; <>
 
+let e == e_add_sub
+
 let additive_op ==
   | ADD;      { OAdd }
   | SUBTRACT; { OSub }
 
-let e :=
-  | e1
-  | ~ = e; ~ = additive_op; ~ = e1; <EBinary> 
+let e_add_sub :=
+  | e_mul_div
+  | wrap (~ = e_add_sub; ~ = additive_op; ~ = e_mul_div; <EBinary>) 
 
 let multiplicative_op ==
   | MULTIPLY; { OMult }
   | DIVIDE;   { ODiv }
 
-let e1 :=
-  | e2
-  | ~ = e1; ~ = multiplicative_op; ~ = e2; <EBinary>
+let e_mul_div :=
+  | e_atom
+  | wrap (~ = e_mul_div; ~ = multiplicative_op; ~ = e_atom; <EBinary>)
 
-let e2 :=  
+let e_atom :=  
   | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
-  | ~ = INT; <ELiteral>
+  | wrap (~ = INT; <ELiteral>)
+
+(* Wrap the expression into a node containing location information *)
+let wrap(x) ==
+  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc; } }
+
+
