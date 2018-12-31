@@ -3,6 +3,7 @@ open Lexing
 (* Some type naming terminology and inspiration for node type from Menhir demo: 
 https://gitlab.inria.fr/fpottier/menhir/tree/master/demos/calc-ast-dune *)
 
+
 (* Type data types, support recursive types like int[][] *)
 type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 [@@deriving show]
@@ -32,7 +33,7 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
 
- (* Utility functions to access elements of $loc tuple in .mly *) 
+(* Utility functions to access elements of $loc tuple in .mly *) 
 let fst tup = let (x,_) = tup in x
 let snd tup = let (_,y) = tup in y
 
