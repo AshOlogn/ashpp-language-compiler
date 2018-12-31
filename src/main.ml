@@ -1,10 +1,9 @@
 
-let src = "/* nested comments /* nest */ */ 3 + 5"
-
+let src = "int[][] x = 5"
 
 open Ast
-let show_ast str = (show_expr (Parser.main Lexer.read (Lexing.from_string str)))
-let () = Printf.printf "AST for %s: %s\n" src (show_ast src)
+let show_ast str = (show_stat_silent (Parser.main Lexer.read (Lexing.from_string str)))
+let () = Printf.printf "AST for %s:\n%s\n" src (show_ast src)
 
 (* 
 open Token

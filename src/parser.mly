@@ -39,10 +39,10 @@
 (* Boolean literals *)
 %token TRUE FALSE
 
-(* end of program invalid Token *)
+(* end of program, invalid token *)
 %token END INVALID
 
-%start <Ast.expr> main
+%start <Ast.stat> main
 %{ open Ast %}
 
 %%
@@ -50,8 +50,28 @@
 (* Trial grammar, not full version *)
 
 let main := 
-  ~ = e; END; <>
+  ~ = s; END; <>
 
+(* Statement grammar *)
+let s := 
+  | wrap_stat (~ = e; <SExpr>)
+  | wrap_stat (WHILE; ~ = e; ~ = s; <SWhile>)
+  | wrap_stat (~ = t; ~ = VARIABLE; EQ; ~ = e; <SAssign>) 
+
+(* Type grammar *)
+let t :=
+  | ~ = prim_t; <TPrim>
+  | ~ = t; LEFT_BRACKET; RIGHT_BRACKET; <TArray>
+
+let prim_t ==
+  | INT_T; { TInt }
+  | CHAR_T; { TChar }
+  | FLOAT_T; { TFloat }
+  | STRING_T; { TString }
+  | BOOL_T; { TBool }
+  | VOID_T; { TVoid }
+
+(* Expression grammar *)
 let e == e_add_sub
 
 let additive_op ==
@@ -60,7 +80,7 @@ let additive_op ==
 
 let e_add_sub :=
   | e_mul_div
-  | wrap (~ = e_add_sub; ~ = additive_op; ~ = e_mul_div; <EBinary>) 
+  | wrap_expr (~ = e_add_sub; ~ = additive_op; ~ = e_mul_div; <EBinary>) 
 
 let multiplicative_op ==
   | MULTIPLY; { OMult }
@@ -68,14 +88,15 @@ let multiplicative_op ==
 
 let e_mul_div :=
   | e_atom
-  | wrap (~ = e_mul_div; ~ = multiplicative_op; ~ = e_atom; <EBinary>)
+  | wrap_expr (~ = e_mul_div; ~ = multiplicative_op; ~ = e_atom; <EBinary>)
 
 let e_atom :=  
   | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
-  | wrap (~ = INT; <ELiteral>)
+  | wrap_expr (~ = INT; <ELiteral>)
 
-(* Wrap the expression into a node containing location information *)
-let wrap(x) ==
-  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc; } }
+(* wrap the expression/statement into a node containing location information *)
+let wrap_expr(x) ==
+  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc;} }
 
-
+let wrap_stat(x) ==
+  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc;} }
