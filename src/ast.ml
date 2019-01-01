@@ -64,6 +64,14 @@ let rec show_raw_expr_silent ex =
   | EUnary (op, exp)     -> Printf.sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr_silent exp)
 and show_expr_silent ex = Printf.sprintf "%s" (show_raw_expr_silent ex.value)
 
+let rec show_raw_stat st =
+  match st with
+  | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr ex)
+  | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
+  | SAssign (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
+  | _                   -> "invalid statement token"
+and show_stat st = Printf.sprintf "[%s %s %s]" (show_raw_stat st.value) (show_position st.st_loc) (show_position st.en_loc)
+
 let rec show_raw_stat_silent st =
   match st with
   | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr_silent ex)

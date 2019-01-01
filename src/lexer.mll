@@ -1,7 +1,15 @@
 {
   open Lexing
   open Parser
+
   exception Error_lexer of string
+
+  let lined_message msg lexbuf = 
+    let line = lexbuf.lex_curr_p.pos_lnum in
+    let col = lexbuf.lex_curr_p.pos_cnum - lexbuf.lex_curr_p.pos_bol in
+    Printf.sprintf "line %d, col %d: %s" line col msg
+
+  let lexer_error msg lexbuf = raise (Error_lexer (lined_message msg lexbuf))
 
   let next_line lexbuf =
     let pos = lexbuf.lex_curr_p in
@@ -80,7 +88,7 @@ rule read = parse
   | "new" { NEW } | "print" { PRINT } | "println" { PRINTLN } | "int" { INT_T } | "char" { CHAR_T } | "float" { FLOAT_T }
   | "bool" { BOOL_T } | "string" { STRING_T } | "void" { VOID_T } | "true" { TRUE } | "false" { FALSE }
   | id { VARIABLE (Lexing.lexeme lexbuf) }
-  | _ { raise (Error_lexer ("Invalid character found: " ^ Lexing.lexeme lexbuf)) }
+  | _ { lexer_error ("Invalid character found: " ^ Lexing.lexeme lexbuf) lexbuf }
   | eof { END }
 
 and read_comment depth = parse
@@ -88,7 +96,7 @@ and read_comment depth = parse
   | end_comment { if depth = 1 then read lexbuf else read_comment (depth-1) lexbuf }
   | newline { next_line lexbuf; read_comment depth lexbuf }
   | _ { read_comment depth lexbuf }
-  | eof { raise (Error_lexer ("Unclosed comment, reached end-of-file")) }
+  | eof { lexer_error "Unclosed comment, reached end-of-file" lexbuf }
 
 (* Borrowed from an excerpt in Real World OCaml *)
 and read_string buf = parse
@@ -104,5 +112,5 @@ and read_string buf = parse
     { Buffer.add_string buf (Lexing.lexeme lexbuf);
       read_string buf lexbuf
     }
-  | _ { raise (Error_lexer ("Invalid string character: " ^ Lexing.lexeme lexbuf)) }
-  | eof { raise (Error_lexer ("String is not terminated, reached end-of-file")) }
+  | _ { lexer_error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf }
+  | eof { lexer_error "String is not terminated, reached end-of-file" lexbuf }
