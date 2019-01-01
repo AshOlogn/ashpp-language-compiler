@@ -9,10 +9,11 @@ type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 [@@deriving show]
 
 type tp =
+  | TPrim of t_prim
   | TArray of tp
   | TNtuple of tp list
   | TFun of tp list * tp
-  | TPrim of t_prim
+  | TClass of string
 [@@deriving show]
 
 (* Operation types *)

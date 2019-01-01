@@ -62,6 +62,13 @@ let s :=
 let t :=
   | ~ = prim_t; <TPrim>
   | ~ = t; LEFT_BRACKET; RIGHT_BRACKET; <TArray>
+  | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; <TNtuple>
+  | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; RIGHTARROW; ~ = t; <TFun>
+  | ~ = VARIABLE; <TClass>
+
+let list_delimited(ltype, delim) :=
+  | x = ltype; { [x] }
+  | x = ltype; delim; xs = list_delimited(ltype, delim); { x :: xs } 
 
 let prim_t ==
   | INT_T; { TInt }

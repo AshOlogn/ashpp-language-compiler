@@ -1,5 +1,5 @@
 
-let src = "int[][] x = 5"
+let src = "object x = 5"
 
 open Ast
 let show_ast str = (show_stat (Parser.main Lexer.read (Lexing.from_string str)))
