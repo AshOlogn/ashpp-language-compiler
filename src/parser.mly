@@ -42,6 +42,8 @@
 (* end of program, invalid token *)
 %token END INVALID
 
+%nonassoc RIGHTARROW
+
 %start <Ast.stat> main
 %{ open Ast %}
 
@@ -56,19 +58,16 @@ let main :=
 let s := 
   | wrap_stat (~ = e; <SExpr>)
   | wrap_stat (WHILE; ~ = e; ~ = s; <SWhile>)
-  | wrap_stat (~ = t; ~ = VARIABLE; EQ; ~ = e; <SAssign>) 
+  | wrap_stat (~ = t; ~ = VARIABLE; EQ; ~ = e; <SDecl>)
+  | wrap_stat (~ = VARIABLE; ~ = assign_op; ~ = e; <SAssign>) 
 
 (* Type grammar *)
 let t :=
   | ~ = prim_t; <TPrim>
   | ~ = t; LEFT_BRACKET; RIGHT_BRACKET; <TArray>
   | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; <TNtuple>
-  | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; RIGHTARROW; ~ = t; <TFun>
+  | LESS; ~ = list_delimited(t, COMMA); GREATER; RIGHTARROW; ~ = t; <TFun>
   | ~ = VARIABLE; <TClass>
-
-let list_delimited(ltype, delim) :=
-  | x = ltype; { [x] }
-  | x = ltype; delim; xs = list_delimited(ltype, delim); { x :: xs } 
 
 let prim_t ==
   | INT_T; { TInt }
@@ -81,25 +80,40 @@ let prim_t ==
 (* Expression grammar *)
 let e == e_add_sub
 
-let additive_op ==
-  | ADD;      { OAdd }
-  | SUBTRACT; { OSub }
-
 let e_add_sub :=
   | e_mul_div
   | wrap_expr (~ = e_add_sub; ~ = additive_op; ~ = e_mul_div; <EBinary>) 
+
+let e_mul_div :=
+  | e_exponent
+  | wrap_expr (~ = e_mul_div; ~ = multiplicative_op; ~ = e_exponent; <EBinary>)
+
+let e_exponent := 
+  | e_atom
+  | wrap_expr (~ = e_exponent; ~ = exponent_op; ~ = e_atom; <EBinary>)
+
+let e_atom :=  
+  | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
+  | wrap_expr (~ = INT; <ELiteral>)
+
+(* Operator token conversions *)
+let assign_op ==
+  | EQ; { OIden }
+  | ADD_EQ; { OAdd }
+  | SUBTRACT_EQ; { OSub }
+  | MULTIPLY_EQ; { OMult }
+  | DIVIDE_EQ; { ODiv } 
+
+let additive_op ==
+  | ADD;      { OAdd }
+  | SUBTRACT; { OSub }
 
 let multiplicative_op ==
   | MULTIPLY; { OMult }
   | DIVIDE;   { ODiv }
 
-let e_mul_div :=
-  | e_atom
-  | wrap_expr (~ = e_mul_div; ~ = multiplicative_op; ~ = e_atom; <EBinary>)
-
-let e_atom :=  
-  | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
-  | wrap_expr (~ = INT; <ELiteral>)
+let exponent_op ==
+  | EXPONENT; { OExp }
 
 (* wrap the expression/statement into a node containing location information *)
 let wrap_expr(x) ==
@@ -107,3 +121,8 @@ let wrap_expr(x) ==
 
 let wrap_stat(x) ==
   ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc;} }
+
+(* Other utiliies *)
+let list_delimited(ltype, delim) :=
+  | x = ltype; { [x] }
+  | x = ltype; delim; xs = list_delimited(ltype, delim); { x :: xs } 

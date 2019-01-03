@@ -17,7 +17,7 @@ type tp =
 [@@deriving show]
 
 (* Operation types *)
-type op_bin = OExp | OMult | ODiv | OAdd | OSub
+type op_bin = OExp | OMult | ODiv | OAdd | OSub | OIden
 [@@deriving show]
 
 type op_un = ONeg | OPos
@@ -37,10 +37,11 @@ and raw_expr =
 type stat = raw_stat node
 and raw_stat = 
   | SExpr of expr
-  | SAssign of tp * string * expr
   | SList of expr list
   | SWhile of expr * stat
   | SFor of stat * expr * stat
+  | SDecl of tp * string * expr
+  | SAssign of string * op_bin * expr
 
 (* Utility functions to access elements of $loc tuple in .mly *) 
 let fst tup = let (x,_) = tup in x
@@ -69,7 +70,16 @@ let rec show_raw_stat st =
   match st with
   | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr ex)
   | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
-  | SAssign (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
+  | SDecl (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
+  | SAssign (var_name, assign, ex) -> 
+      let assign_str = match assign with
+        | OAdd -> "+="
+        | OSub -> "-="
+        | OMult -> "*="
+        | ODiv -> "/="
+        | _    -> "invalid_assign_op"
+      in
+      Printf.sprintf "(Ast.SAssign %s %s %s)" var_name assign_str (show_expr ex)
   | _                   -> "invalid statement token"
 and show_stat st = Printf.sprintf "[%s %s %s]" (show_raw_stat st.value) (show_position st.st_loc) (show_position st.en_loc)
 
@@ -77,6 +87,15 @@ let rec show_raw_stat_silent st =
   match st with
   | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr_silent ex)
   | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr_silent cond) (show_stat_silent body)
-  | SAssign (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr_silent ex)
+  | SDecl (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr_silent ex)
+  | SAssign (var_name, assign, ex) -> 
+      let assign_str = match assign with
+        | OAdd -> "+="
+        | OSub -> "-="
+        | OMult -> "*="
+        | ODiv -> "/="
+        | _    -> "invalid_assign_op"
+      in
+      Printf.sprintf "(Ast.SAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
   | _                   -> "invalid statement token"
 and show_stat_silent st = Printf.sprintf "%s" (show_raw_stat_silent st.value)
