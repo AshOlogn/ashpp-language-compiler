@@ -74,7 +74,6 @@ rule read = parse
   | "&&" { AND }
   | "&=" { AND_EQ }
   | '&'  { BIT_AND }
-  | "^^" { XOR }
   | "^=" { XOR_EQ }
   | '^'  { BIT_XOR }
   | "||" { OR }

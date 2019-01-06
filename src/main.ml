@@ -1,8 +1,8 @@
 
-let src = "<int, string> -> float x = 5"
+let src = "y = 1 | 2 & 3 ^ 4"
 
 open Ast
-let show_ast str = (show_stat (Parser.main Lexer.read (Lexing.from_string str)))
+let show_ast str = (show_stat_silent (Parser.main Lexer.read (Lexing.from_string str)))
 let () = Printf.printf "AST for %s:\n%s\n" src (show_ast src)
 
 (* 

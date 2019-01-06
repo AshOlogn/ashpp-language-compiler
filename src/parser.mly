@@ -14,7 +14,6 @@
 %token BIT_OR 
 
 %token AND
-%token XOR
 %token OR
 
 %token QUESTION COLON
@@ -42,8 +41,6 @@
 (* end of program, invalid token *)
 %token END INVALID
 
-%nonassoc RIGHTARROW
-
 %start <Ast.stat> main
 %{ open Ast %}
 
@@ -52,14 +49,14 @@
 (* Trial grammar, not full version *)
 
 let main := 
-  ~ = s; END; <>
+  wrap_stat (~ = list(s); END; <SList>)
 
 (* Statement grammar *)
 let s := 
   | wrap_stat (~ = e; <SExpr>)
+  | wrap_stat (LEFT_BRACE; ~ = list(s); RIGHT_BRACE; <SList>)
   | wrap_stat (WHILE; ~ = e; ~ = s; <SWhile>)
   | wrap_stat (~ = t; ~ = VARIABLE; EQ; ~ = e; <SDecl>)
-  | wrap_stat (~ = VARIABLE; ~ = assign_op; ~ = e; <SAssign>) 
 
 (* Type grammar *)
 let t :=
@@ -78,7 +75,43 @@ let prim_t ==
   | VOID_T; { TVoid }
 
 (* Expression grammar *)
-let e == e_add_sub
+let e == e_assign
+
+let e_assign :=
+  | e_log_or
+  | wrap_expr (~ = VARIABLE; ~ = assign_op; ~ = e_log_or; <EAssign>)
+
+let e_log_or :=
+  | e_log_and
+  | wrap_expr (~ = e_log_or; ~ = log_or_op; ~ = e_log_and; <EBinary>) 
+
+let e_log_and :=
+  | e_bit_or
+  | wrap_expr (~ = e_log_and; ~ = log_and_op; ~ = e_bit_or; <EBinary>) 
+
+let e_bit_or :=
+  | e_bit_xor
+  | wrap_expr (~ = e_bit_or; ~ = bit_or_op; ~ = e_bit_xor; <EBinary>)
+
+let e_bit_xor :=
+  | e_bit_and
+  | wrap_expr (~ = e_bit_xor; ~ = bit_xor_op; ~ = e_bit_and; <EBinary>)
+
+let e_bit_and :=
+  | e_equality
+  | wrap_expr (~ = e_bit_and; ~ = bit_and_op; ~ = e_equality; <EBinary>)
+
+let e_equality :=
+  | e_comp
+  | wrap_expr (~ = e_equality; ~ = equality_op; ~ = e_comp; <EBinary>)
+
+let e_comp :=
+  | e_bit_shift
+  | wrap_expr (~ = e_comp; ~ = comp_op; ~ = e_bit_shift; <EBinary>)
+
+let e_bit_shift :=
+  | e_add_sub
+  | wrap_expr (~ = e_bit_shift; ~ = bit_shift_op; ~ = e_add_sub; <EBinary>)
 
 let e_add_sub :=
   | e_mul_div
@@ -104,6 +137,36 @@ let assign_op ==
   | MULTIPLY_EQ; { OMult }
   | DIVIDE_EQ; { ODiv } 
 
+let log_or_op ==
+  | OR; { OLogOr }
+
+let log_and_op ==
+  | AND; { OLogAnd }
+
+
+let bit_and_op ==
+  | BIT_AND; { OBitAnd }
+
+let bit_xor_op ==
+  | BIT_XOR; { OBitXor }
+
+let bit_or_op ==
+  | BIT_OR; { OBitOr }
+
+let equality_op ==
+  | EQ_EQ;  { OEq }
+  | NOT_EQ; { ONeq }
+
+let comp_op ==
+  | LESS; { OLt }
+  | LESS_EQ; { OLeq }
+  | GREATER; { OGt }
+  | GREATER_EQ; { OGeq }
+
+let bit_shift_op ==
+  | BIT_LEFT; { OBitl }
+  | BIT_RIGHT; { OBitr }
+
 let additive_op ==
   | ADD;      { OAdd }
   | SUBTRACT; { OSub }
@@ -111,6 +174,7 @@ let additive_op ==
 let multiplicative_op ==
   | MULTIPLY; { OMult }
   | DIVIDE;   { ODiv }
+  | MOD;      { OMod }
 
 let exponent_op ==
   | EXPONENT; { OExp }

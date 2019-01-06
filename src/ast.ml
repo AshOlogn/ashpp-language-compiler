@@ -3,6 +3,8 @@ open Lexing
 (* Some type naming terminology and inspiration for node type from Menhir demo: 
 https://gitlab.inria.fr/fpottier/menhir/tree/master/demos/calc-ast-dune *)
 
+(* append string to another string *)
+let (^$) c s = s ^ Char.escaped c;; 
 
 (* Type data types, support recursive types like int[][] *)
 type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
@@ -17,7 +19,19 @@ type tp =
 [@@deriving show]
 
 (* Operation types *)
-type op_bin = OExp | OMult | ODiv | OAdd | OSub | OIden
+type op_bin = 
+  | OIden 
+  | OExp 
+  | OMult | ODiv | OMod
+  | OAdd | OSub 
+  | OBitl | OBitr
+  | OLt | OGt | OLeq | OGeq
+  | OEq | ONeq
+  | OBitAnd
+  | OBitXor
+  | OBitOr
+  | OLogAnd
+  | OLogOr
 [@@deriving show]
 
 type op_un = ONeg | OPos
@@ -32,16 +46,16 @@ and raw_expr =
   | ELiteral of int
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
+  | EAssign of string * op_bin * expr
 
 (* Statement node *)
 type stat = raw_stat node
 and raw_stat = 
   | SExpr of expr
-  | SList of expr list
+  | SList of stat list
   | SWhile of expr * stat
   | SFor of stat * expr * stat
   | SDecl of tp * string * expr
-  | SAssign of string * op_bin * expr
 
 (* Utility functions to access elements of $loc tuple in .mly *) 
 let fst tup = let (x,_) = tup in x
@@ -56,6 +70,16 @@ let rec show_raw_expr ex =
   | ELiteral v           -> Printf.sprintf "(Ast.ELiteral %d)" v
   | EBinary (l, op, r)   -> Printf.sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
   | EUnary (op, exp)     -> Printf.sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
+  | EAssign (var_name, assign, ex) -> 
+      let assign_str = match assign with
+        | OIden -> "="
+        | OAdd -> "+="
+        | OSub -> "-="
+        | OMult -> "*="
+        | ODiv -> "/="
+        | _    -> "invalid_assign_op"
+      in
+      Printf.sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr ex)
 and show_expr ex = Printf.sprintf "[%s %s %s]" 
                       (show_raw_expr ex.value) (show_position ex.st_loc) (show_position ex.en_loc)
 
@@ -64,38 +88,32 @@ let rec show_raw_expr_silent ex =
   | ELiteral v           -> Printf.sprintf "(Ast.ELiteral %d)" v
   | EBinary (l, op, r)   -> Printf.sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr_silent l) (show_expr_silent r)
   | EUnary (op, exp)     -> Printf.sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr_silent exp)
-and show_expr_silent ex = Printf.sprintf "%s" (show_raw_expr_silent ex.value)
-
-let rec show_raw_stat st =
-  match st with
-  | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr ex)
-  | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
-  | SDecl (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
-  | SAssign (var_name, assign, ex) -> 
+  | EAssign (var_name, assign, ex) -> 
       let assign_str = match assign with
+        | OIden -> "="
         | OAdd -> "+="
         | OSub -> "-="
         | OMult -> "*="
         | ODiv -> "/="
         | _    -> "invalid_assign_op"
       in
-      Printf.sprintf "(Ast.SAssign %s %s %s)" var_name assign_str (show_expr ex)
+      Printf.sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
+and show_expr_silent ex = Printf.sprintf "%s" (show_raw_expr_silent ex.value)
+
+let rec show_raw_stat st =
+  match st with
+  | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr ex)
+  | SList xs            -> Printf.sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat xs))  
+  | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
+  | SDecl (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
   | _                   -> "invalid statement token"
 and show_stat st = Printf.sprintf "[%s %s %s]" (show_raw_stat st.value) (show_position st.st_loc) (show_position st.en_loc)
 
 let rec show_raw_stat_silent st =
   match st with
   | SExpr ex            -> Printf.sprintf "(Ast.SExpr %s)" (show_expr_silent ex)
+  | SList xs            -> Printf.sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat_silent xs))  
   | SWhile (cond, body) -> Printf.sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr_silent cond) (show_stat_silent body)
   | SDecl (ty, var_name, ex) -> Printf.sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr_silent ex)
-  | SAssign (var_name, assign, ex) -> 
-      let assign_str = match assign with
-        | OAdd -> "+="
-        | OSub -> "-="
-        | OMult -> "*="
-        | ODiv -> "/="
-        | _    -> "invalid_assign_op"
-      in
-      Printf.sprintf "(Ast.SAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
   | _                   -> "invalid statement token"
 and show_stat_silent st = Printf.sprintf "%s" (show_raw_stat_silent st.value)
