@@ -1,12 +1,26 @@
-
-let src = "3+3"
-
+open Core
 open Ast
+open Err
 open Checker
 
-let get_ast str = check_stat str (Parser.main Lexer.read (Lexing.from_string str))
-let show_ast str = show_stat_silent (get_ast str)
-let () = Printf.printf "AST for %s:\n%s\n" src (show_ast src)
+(* copied some boilerplate from Real World OCaml textbook for file IO *)
+(* http://dev.realworldocaml.org/parsing-with-ocamllex-and-menhir.html#defining-a-lexer *)
+
+let fname = "src/test.app"
+let parse_with_error lexbuf =
+  try (Printf.printf "%s\n" (show_stat_silent (check_stat (Parser.main Lexer.read lexbuf)))) with
+  | LexerError msg | TypeError msg -> Printf.printf "%s" msg 
+
+let () = 
+  (* get buffer for source file *)
+  let inb = In_channel.create fname in
+  let lexbuf = Lexing.from_channel inb  in
+  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fname };
+
+  (* parse and lex *)
+  parse_with_error lexbuf;
+  In_channel.close inb;
+
 
 (* 
 open Token

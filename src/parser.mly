@@ -25,7 +25,7 @@
 (* Types, int is just int64_t for now *)
 %token <int> INT
 %token <char> CHAR
-%token <float> DOUBLE
+%token <float> FLOAT
 %token <bool> BOOL
 %token <string> STRING
 %token <string> VARIABLE
@@ -125,6 +125,8 @@ let e_exponent :=
 let e_atom :=  
   | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
   | wrap_expr (~ = INT; <ELitInt>)
+  | wrap_expr (~ = FLOAT; <ELitFloat>)
+  | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
 
 (* Operator token conversions *)
@@ -181,6 +183,9 @@ let wrap_expr(x) ==
   ~ = x; { {value = x; typ = TDummy; st_loc = fst $loc; en_loc = snd $loc;} }
 
 let wrap_stat(x) ==
+  ~ = x; { {value = x; typ = TDummy; st_loc = fst $loc; en_loc = snd $loc;} }
+
+let wrap_stat_toplevel(x) ==
   ~ = x; { {value = x; typ = TDummy; st_loc = fst $loc; en_loc = snd $loc;} }
 
 (* Other utiliies *)
