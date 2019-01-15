@@ -33,10 +33,7 @@
 (* Reserved Words *)
 %token FOR WHILE DO IF ELIF ELSE BREAK SWITCH CASE
 %token CLASS EXTENDS FUN RETURN NEW PRINT PRINTLN
-%token INT_T CHAR_T FLOAT_T BOOL_T STRING_T VOID_T 
-
-(* Boolean literals *)
-%token TRUE FALSE
+%token INT_T CHAR_T FLOAT_T BOOL_T STRING_T VOID_T
 
 (* end of program, invalid token *)
 %token END INVALID
@@ -127,7 +124,8 @@ let e_exponent :=
 
 let e_atom :=  
   | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
-  | wrap_expr (~ = INT; <ELiteral>)
+  | wrap_expr (~ = INT; <ELitInt>)
+  | wrap_expr (~ = BOOL; <ELitBool>)
 
 (* Operator token conversions *)
 let assign_op ==
@@ -142,7 +140,6 @@ let log_or_op ==
 
 let log_and_op ==
   | AND; { OLogAnd }
-
 
 let bit_and_op ==
   | BIT_AND; { OBitAnd }
@@ -181,10 +178,10 @@ let exponent_op ==
 
 (* wrap the expression/statement into a node containing location information *)
 let wrap_expr(x) ==
-  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc;} }
+  ~ = x; { {value = x; typ = TDummy; st_loc = fst $loc; en_loc = snd $loc;} }
 
 let wrap_stat(x) ==
-  ~ = x; { {value = x; st_loc = fst $loc; en_loc = snd $loc;} }
+  ~ = x; { {value = x; typ = TDummy; st_loc = fst $loc; en_loc = snd $loc;} }
 
 (* Other utiliies *)
 let list_delimited(ltype, delim) :=

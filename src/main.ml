@@ -1,8 +1,11 @@
 
-let src = "y = 1 | 2 & 3 ^ 4"
+let src = "3+3"
 
 open Ast
-let show_ast str = (show_stat_silent (Parser.main Lexer.read (Lexing.from_string str)))
+open Checker
+
+let get_ast str = check_stat str (Parser.main Lexer.read (Lexing.from_string str))
+let show_ast str = show_stat_silent (get_ast str)
 let () = Printf.printf "AST for %s:\n%s\n" src (show_ast src)
 
 (* 

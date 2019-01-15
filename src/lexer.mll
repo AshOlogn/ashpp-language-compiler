@@ -24,6 +24,7 @@ let digit = ['0'-'9']
 let int = digit+
 let exp = ['e' 'E'] ['-' '+']? digit+
 let float = digit '.' int exp?
+let boolean = "true" | "false"
 
 (* Borrowed these from the online book Real World OCaml *)
 let white = [' ' '\t']+
@@ -81,11 +82,12 @@ rule read = parse
   | '|'  { BIT_OR }
   | int { INT (int_of_string (Lexing.lexeme lexbuf)) }
   | float { DOUBLE (float_of_string (Lexing.lexeme lexbuf)) }
+  | boolean { BOOL ((Lexing.lexeme lexbuf) = "true") }
   | '"' { read_string (Buffer.create 100) lexbuf }
   | "for" { FOR } | "while" { WHILE } | "do" { DO } | "if" { IF } | "elif" { ELIF } | "else" { ELSE } | "break" { BREAK }
   | "switch" { SWITCH } | "case" { CASE } | "class" { CLASS } | "extends" { EXTENDS } | "fun" { FUN } | "return" { RETURN }
   | "new" { NEW } | "print" { PRINT } | "println" { PRINTLN } | "int" { INT_T } | "char" { CHAR_T } | "float" { FLOAT_T }
-  | "bool" { BOOL_T } | "string" { STRING_T } | "void" { VOID_T } | "true" { TRUE } | "false" { FALSE }
+  | "bool" { BOOL_T } | "string" { STRING_T } | "void" { VOID_T }
   | id { VARIABLE (Lexing.lexeme lexbuf) }
   | _ { lexer_error ("Invalid character found: " ^ Lexing.lexeme lexbuf) lexbuf }
   | eof { END }

@@ -3,19 +3,20 @@ open Lexing
 (* Some type naming terminology and inspiration for node type from Menhir demo: 
 https://gitlab.inria.fr/fpottier/menhir/tree/master/demos/calc-ast-dune *)
 
-(* append string to another string *)
-let (^$) c s = s ^ Char.escaped c;; 
-
 (* Type data types, support recursive types like int[][] *)
 type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 [@@deriving show]
 
+(* Dummy type used in expressions when parsing with Menhir to defer type-checking to later code *)
+(* Invalid used in type-checker to signify type error *)
 type tp =
   | TPrim of t_prim
   | TArray of tp
   | TNtuple of tp list
   | TFun of tp list * tp
   | TClass of string
+  | TDummy
+  | TInvalid
 [@@deriving show]
 
 (* Operation types *)
@@ -37,13 +38,16 @@ type op_bin =
 type op_un = ONeg | OPos
 [@@deriving show]
 
-(* Node used to build abstract syntax tree, with location metadata *)
-type 'a node = { value: 'a; st_loc: Lexing.position; en_loc: Lexing.position; } 
+(* Node used to build abstract syntax tree, with location metadata and type information *)
+(* The Menhir-based parser sets type as "dummy" to defer type-checking *)
+(* For statement nodes, type is always dummy since statements don't return values *)
+type 'a node = { value: 'a; typ: tp; st_loc: Lexing.position; en_loc: Lexing.position;} 
 
 (* Expression node, wrapped and unwrapped *)
 type expr = raw_expr node 
 and raw_expr = 
-  | ELiteral of int
+  | ELitInt of int
+  | ELitBool of bool
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
@@ -67,7 +71,8 @@ let show_position p = Printf.sprintf "{ Lexing.pos_fname = %s; pos_lnum = %d; po
 
 let rec show_raw_expr ex =
   match ex with
-  | ELiteral v           -> Printf.sprintf "(Ast.ELiteral %d)" v
+  | ELitInt v           -> Printf.sprintf "(Ast.ELitInt %d)" v
+  | ELitBool b          -> Printf.sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
   | EBinary (l, op, r)   -> Printf.sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
   | EUnary (op, exp)     -> Printf.sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
   | EAssign (var_name, assign, ex) -> 
@@ -85,7 +90,8 @@ and show_expr ex = Printf.sprintf "[%s %s %s]"
 
 let rec show_raw_expr_silent ex =
   match ex with
-  | ELiteral v           -> Printf.sprintf "(Ast.ELiteral %d)" v
+  | ELitInt v           -> Printf.sprintf "(Ast.ELitInt %d)" v
+  | ELitBool b          -> Printf.sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
   | EBinary (l, op, r)   -> Printf.sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr_silent l) (show_expr_silent r)
   | EUnary (op, exp)     -> Printf.sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr_silent exp)
   | EAssign (var_name, assign, ex) -> 
