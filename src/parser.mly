@@ -58,7 +58,7 @@ let s :=
 (* Type grammar *)
 let t :=
   | ~ = prim_t; <TPrim>
-  | ~ = t; LEFT_BRACKET; RIGHT_BRACKET; <TArray>
+  | LEFT_BRACKET; ~ = t; RIGHT_BRACKET; <TArray>
   | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; <TNtuple>
   | LESS; ~ = list_delimited(t, COMMA); GREATER; RIGHTARROW; ~ = t; <TFun>
   | ~ = VARIABLE; <TClass>

@@ -1,9 +1,8 @@
 open Ast
 
-
 (* type-checking utility functions *)
 (* return evaluated type, or invalid if arguments have invalid types *)
-
+(* exceptions are thrown by the actual checker functions *)
 let check_unary op t = 
   match op with
   | ONeg | OPos ->
@@ -18,7 +17,6 @@ let check_unary op t =
     (match t with 
     | TPrim TBool -> t
     | _     -> TInvalid)
- 
 
 let check_binary op t1 t2 =
   match op with

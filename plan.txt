@@ -40,7 +40,7 @@ E2 =  '(' E ')'       -- parenthesized expressions
 
 
 Type grammar
-T =   T[]             -- array of a type
+T =   [T]             -- array of a type
     | (T...T)         -- n-tuple
     | T -> T          -- function
     | className       -- class name 

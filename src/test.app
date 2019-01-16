@@ -1,1 +1,1 @@
-!5
+[<string, int> -> int] x = 5
