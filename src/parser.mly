@@ -11,7 +11,7 @@
 
 %token BIT_AND
 %token BIT_XOR
-%token BIT_OR 
+%token BIT_OR
 
 %token AND
 %token OR
@@ -119,13 +119,18 @@ let e_mul_div :=
   | wrap_expr (~ = e_mul_div; ~ = multiplicative_op; ~ = e_exponent; <EBinary>)
 
 let e_exponent := 
+  | e_unop
+  | wrap_expr (~ = e_exponent; ~ = exponent_op; ~ = e_unop; <EBinary>)
+
+let e_unop :=
   | e_atom
-  | wrap_expr (~ = e_exponent; ~ = exponent_op; ~ = e_atom; <EBinary>)
+  | wrap_expr(~ = unary_op; ~ = e_atom; <EUnary> )
 
 let e_atom :=  
   | LEFT_PAREN; ~ = e; RIGHT_PAREN; <>
   | wrap_expr (~ = INT; <ELitInt>)
   | wrap_expr (~ = FLOAT; <ELitFloat>)
+  | wrap_expr (~ = CHAR; <ELitChar>)
   | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
 
@@ -135,7 +140,14 @@ let assign_op ==
   | ADD_EQ; { OAdd }
   | SUBTRACT_EQ; { OSub }
   | MULTIPLY_EQ; { OMult }
-  | DIVIDE_EQ; { ODiv } 
+  | DIVIDE_EQ; { ODiv }
+  | MOD_EQ; { OMod }
+  | AND_EQ; { OGenAnd }
+  | XOR_EQ; { OGenXor }
+  | OR_EQ; { OGenOr }
+  | BIT_LEFT_EQ; { OBitl }
+  | BIT_RIGHT_EQ; { OBitr }
+  | EXPONENT_EQ; { OExp }
 
 let log_or_op ==
   | OR; { OLogOr }
@@ -177,6 +189,12 @@ let multiplicative_op ==
 
 let exponent_op ==
   | EXPONENT; { OExp }
+
+let unary_op ==
+  | ADD; { OPos }
+  | SUBTRACT; { ONeg }
+  | NOT; { OLogNot }
+  | BIT_NOT; { OBitNot }
 
 (* wrap the expression/statement into a node containing location information *)
 let wrap_expr(x) ==

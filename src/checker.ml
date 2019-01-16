@@ -2,8 +2,6 @@ open Ast
 open Checkutils
 open Err
 
-let dummy = "hello, world"
-
 (* Exceptions to throw during type/scope-checking *)
 exception Error_checker of string
 
@@ -16,15 +14,15 @@ let rec check_expr ast =
   match ast.value with
   | ELitInt _ -> fupdate_expr ast (TPrim TInt)
   | ELitFloat _ -> fupdate_expr ast (TPrim TFloat)
+  | ELitChar _ -> fupdate_expr ast (TPrim TChar)
   | ELitString _ -> fupdate_expr ast (TPrim TString)
   | ELitBool _ -> fupdate_expr ast (TPrim TBool)
   | EUnary (op, exp) -> 
     let cexp = check_expr exp in
-    let final_type = check_unary cexp.typ in
+    let final_type = check_unary op cexp.typ in
     (match final_type with
-      | TInvalid -> ast
-      | _         -> { ast with value = EUnary (op, cexp); typ = final_type })
-  
+      | TInvalid -> checker_unop_error ast.st_loc exp.en_loc op cexp.typ
+      | _         -> { ast with value = EUnary (op, cexp); typ = final_type})
   | EBinary (exp1, op, exp2) ->
     let cexp1 = check_expr exp1 in
     let cexp2 = check_expr exp2 in

@@ -34,9 +34,13 @@ type op_bin =
   | OBitOr
   | OLogAnd
   | OLogOr
+  (* these last 3 work for bitwise or logic to handle assignment *)
+  | OGenAnd
+  | OGenOr
+  | OGenXor
 [@@deriving show]
 
-type op_un = ONeg | OPos
+type op_un = ONeg | OPos | OBitNot | OLogNot
 [@@deriving show]
 
 (* Node used to build abstract syntax tree, with location metadata and type information *)
@@ -49,6 +53,7 @@ type expr = raw_expr node
 and raw_expr = 
   | ELitInt of int
   | ELitFloat of float
+  | ELitChar of char
   | ELitString of string
   | ELitBool of bool
   | EUnary of op_un * expr
@@ -98,12 +103,15 @@ let show_pretty_op_bin op =
   | OBitl -> "<<" | OBitr -> ">>"
   | OLt -> "<" | OGt -> ">" | OLeq -> "<=" | OGeq -> ">="
   | OEq -> "==" | ONeq -> "!="
-  | OBitAnd -> "&"
-  | OBitXor -> "^"
-  | OBitOr -> "|"
+  | OBitAnd | OGenAnd -> "&"
+  | OBitXor | OGenXor -> "^"
+  | OBitOr  | OGenOr -> "|"
   | OLogAnd -> "&&"
   | OLogOr -> "||" 
 
+let show_pretty_op_un op =
+  match op with
+  | OLogNot -> "!" | OBitNot -> "~" | OPos -> "+" | ONeg -> "-"
 
 (* "show" printing utilities for expressions, and statements *)
 let show_position p = sprintf "{ Lexing.pos_fname = %s; pos_lnum = %d; pos_bol = %d; pos_cnum = %d }" 
@@ -113,10 +121,11 @@ let rec show_raw_expr ex =
   match ex with
   | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
   | ELitFloat f         -> sprintf "(Ast.ELitFloat %f)" f
+  | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
   | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
   | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
-  | EBinary (l, op, r)   -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
-  | EUnary (op, exp)     -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
+  | EBinary (l, op, r)  -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
+  | EUnary (op, exp)    -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
   | EAssign (var_name, assign, ex) -> 
       let assign_str = match assign with
         | OIden -> "="
@@ -134,6 +143,7 @@ let rec show_raw_expr_silent ex =
   match ex with
   | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
   | ELitFloat f         -> sprintf "(Ast.ELitFloat %f)" f
+  | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
   | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
   | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
   | EBinary (l, op, r)   -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr_silent l) (show_expr_silent r)

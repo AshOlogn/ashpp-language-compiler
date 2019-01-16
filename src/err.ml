@@ -28,7 +28,7 @@ let lexer_error pos msg = raise (LexerError (gen_err_format pos pos "Lexer" msg)
 (* static type errors *)
 let checker_unop_error spos epos op t = 
   let msg = sprintf "'%s' operator does not take a %s type argument" 
-    (show_pretty_op_bin op) (show_pretty_tp t)
+    (show_pretty_op_un op) (show_pretty_tp t)
   in
     raise (TypeError (gen_err_format spos epos "Type" msg))
 
