@@ -2,13 +2,15 @@ open Core
 open Ast
 open Err
 open Checker
+open Symtable
 
 (* copied some boilerplate from Real World OCaml textbook for file IO *)
 (* http://dev.realworldocaml.org/parsing-with-ocamllex-and-menhir.html#defining-a-lexer *)
 
 let fname = "src/test.app"
 let parse_with_error lexbuf =
-  try (Printf.printf "%s\n" (show_stat_silent (check_stat (Parser.main Lexer.read lexbuf)))) with
+  let (stat, _) = check_stat ((Parser.main Lexer.read lexbuf), symtable_init) in
+  try (Printf.printf "%s\n" (show_stat_silent stat)) with
   | LexerError msg | TypeError msg -> Printf.printf "%s" msg 
 
 let () = 

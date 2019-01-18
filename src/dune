@@ -4,11 +4,11 @@
 
 (menhir
   (modules parser)
-  (flags ("--explain"))
+  (flags ("-la" "2"))
 )
 
 (executable
   (name      main)
   (libraries core stdio)
-  (preprocess (pps ppx_deriving.show))
+  (preprocess (pps ppx_deriving.show ppx_jane))
 )

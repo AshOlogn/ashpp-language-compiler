@@ -22,7 +22,7 @@ type tp =
 
 (* Operation types *)
 type op_bin = 
-  | OIden 
+  | OIden
   | OExp 
   | OMult | ODiv | OMod
   | OAdd | OSub 

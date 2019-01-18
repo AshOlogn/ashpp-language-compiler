@@ -2,58 +2,69 @@ open Ast
 open Checkutils
 open Err
 
-(* Exceptions to throw during type/scope-checking *)
-exception Error_checker of string
-
 (* utility function to functionally update expr node with proper type *)
 let fupdate_expr exp typ = { exp with typ = typ }
 
 (* this function takes an expression node, recursively type-checks *)
 (* returns checked expression node *)
-let rec check_expr ast = 
+let rec check_expr (ast, table) = 
   match ast.value with
-  | ELitInt _ -> fupdate_expr ast (TPrim TInt)
-  | ELitFloat _ -> fupdate_expr ast (TPrim TFloat)
-  | ELitChar _ -> fupdate_expr ast (TPrim TChar)
-  | ELitString _ -> fupdate_expr ast (TPrim TString)
-  | ELitBool _ -> fupdate_expr ast (TPrim TBool)
+  | ELitInt _ -> (fupdate_expr ast (TPrim TInt), table)
+  | ELitFloat _ -> (fupdate_expr ast (TPrim TFloat), table)
+  | ELitChar _ -> (fupdate_expr ast (TPrim TChar), table)
+  | ELitString _ -> (fupdate_expr ast (TPrim TString), table)
+  | ELitBool _ -> (fupdate_expr ast (TPrim TBool), table)
   | EUnary (op, exp) -> 
-    let cexp = check_expr exp in
-    let final_type = check_unary op cexp.typ in
+    let (exp', table') = check_expr (exp, table) in
+    let final_type = check_unary op exp'.typ in
     (match final_type with
-      | TInvalid -> checker_unop_error ast.st_loc exp.en_loc op cexp.typ
-      | _         -> { ast with value = EUnary (op, cexp); typ = final_type})
+      | TInvalid -> checker_unop_error ast.st_loc exp'.en_loc op exp'.typ
+      | _         -> ({ ast with value = EUnary (op, exp'); typ = final_type }, table'))
   | EBinary (exp1, op, exp2) ->
-    let cexp1 = check_expr exp1 in
-    let cexp2 = check_expr exp2 in
-    let final_type = check_binary op cexp1.typ cexp2.typ in
+    let (exp1', table') = check_expr (exp1, table) in
+    let (exp2', table'') = check_expr (exp2, table') in
+    let final_type = check_binary op exp1'.typ exp2'.typ in
     (match final_type with
-    | TInvalid -> checker_binop_error cexp1.st_loc cexp2.en_loc op cexp1.typ cexp2.typ
-    | _ -> { ast with value = EBinary (cexp1, op, cexp2); typ = final_type })
+    | TInvalid -> checker_binop_error exp1'.st_loc exp2'.en_loc op exp1'.typ exp2'.typ
+    | _ -> ({ ast with value = EBinary (exp1', op, exp2'); typ = final_type }, table''))
   
-  | _ -> ast
+  | _ -> (ast, table)
 
+
+(* this function maps over list of statements, returning checked list and updated symtable *)
+let rec check_stat_list stat_list table = 
+  match stat_list with 
+  | []        -> ([], table)
+  | (s :: ss) ->
+    let (s', table') = check_stat (s, table) in 
+    let (slist, table'') = (check_stat_list ss table') in
+    (s' :: slist, table'')
 
 (* this function traverses the preliminary AST and does type/scope-checking *)
 (* returns an AST with proper type annotations in place of "dummy" *)
-let rec check_stat ast =
+and check_stat (ast, table) =
   match ast.value with
-  | SExpr exp -> {ast with value = SExpr (check_expr exp) }
-  | SList exp_list -> { ast with value = SList (List.map check_stat exp_list) }
+  | SExpr exp -> 
+    let (exp', table') = check_expr (exp, table) in
+    ({ast with value = SExpr exp' }, table')
+  
+  | SList stat_list -> 
+    let (stat_list', table') = check_stat_list stat_list table in
+    ({ast with value = SList stat_list'}, table')
 
   | SWhile (cond, stm) -> 
-    let ccond = check_expr cond in
-    let cstm = check_stat stm in
-    (match ccond.typ with
-    | TPrim TBool -> { ast with value = SWhile (ccond, cstm) }
-    | _ -> ast)
+    let (cond', table') = check_expr (cond, table) in
+    let (stm', table'') = check_stat (stm, table') in
+    (match cond'.typ with
+    | TPrim TBool -> ({ ast with value = SWhile (cond', stm') }, table'')
+    | _ -> (ast, table))
 
   | SFor (stm_init, cond_exp, stm_bod) -> 
-    let cstm_init = check_stat stm_init in
-    let ccond_exp = check_expr cond_exp in
-    let cstm_bod = check_stat stm_bod in
-    (match ccond_exp.typ with 
-    | TPrim TBool -> { ast with value = SFor (cstm_init, ccond_exp, cstm_bod) }
-    | _ -> ast)
+    let (stm_init', table') = check_stat (stm_init, table) in
+    let (cond_exp', table'') = check_expr (cond_exp, table') in
+    let (stm_bod', table''') = check_stat (stm_bod, table'') in
+    (match cond_exp'.typ with 
+    | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod')}, table''')
+    | _ -> (ast, table))
   
-  | _ -> ast
+  | _ -> (ast, table)
