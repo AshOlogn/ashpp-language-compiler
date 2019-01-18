@@ -133,6 +133,7 @@ let e_atom :=
   | wrap_expr (~ = CHAR; <ELitChar>)
   | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
+  | wrap_expr (~ = VARIABLE; <EVar>)
 
 (* Operator token conversions *)
 let assign_op ==

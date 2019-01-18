@@ -1,2 +1,2 @@
 int x = 5
-y = 3
+int y = 3 + y

@@ -41,3 +41,6 @@ let checker_binop_error spos epos op t1 t2 =
 
 let var_not_declared_error spos epos name =
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s not declared" name)))
+
+let var_mult_declared_error spos epos name = 
+  raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s already declared in this scope" name)))

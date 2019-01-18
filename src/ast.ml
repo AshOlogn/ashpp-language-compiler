@@ -56,6 +56,7 @@ and raw_expr =
   | ELitChar of char
   | ELitString of string
   | ELitBool of bool
+  | EVar of string
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
@@ -124,6 +125,7 @@ let rec show_raw_expr ex =
   | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
   | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
   | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
+  | EVar str            -> sprintf "(Ast.EVar %s)" str
   | EBinary (l, op, r)  -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
   | EUnary (op, exp)    -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
   | EAssign (var_name, assign, ex) -> 
@@ -146,6 +148,7 @@ let rec show_raw_expr_silent ex =
   | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
   | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
   | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
+  | EVar str            -> sprintf "(Ast.EVar %s)" str
   | EBinary (l, op, r)   -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr_silent l) (show_expr_silent r)
   | EUnary (op, exp)     -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr_silent exp)
   | EAssign (var_name, assign, ex) -> 

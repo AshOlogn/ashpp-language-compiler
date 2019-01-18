@@ -15,6 +15,10 @@ let rec check_expr (ast, table) =
   | ELitChar _ -> (fupdate_expr ast (TPrim TChar), table)
   | ELitString _ -> (fupdate_expr ast (TPrim TString), table)
   | ELitBool _ -> (fupdate_expr ast (TPrim TBool), table)
+  | EVar name ->
+    (match symtable_find table name with
+    | None -> var_not_declared_error ast.st_loc ast.en_loc name
+    | Some typ -> (fupdate_expr ast typ, table))
   | EUnary (op, exp) -> 
     let (exp', table') = check_expr (exp, table) in
     let final_type = check_unary op exp'.typ in
@@ -30,7 +34,7 @@ let rec check_expr (ast, table) =
     | _ -> ({ ast with value = EBinary (exp1', op, exp2'); typ = final_type }, table''))
   | EAssign (name, op, exp) ->
     (match symtable_find table name with
-    | None -> var_not_declared_error exp.st_loc exp.en_loc name
+    | None -> var_not_declared_error ast.st_loc ast.en_loc name
     | Some typ -> 
       let (exp', table') = check_expr (exp, table) in
       let final_type = check_binary op typ exp'.typ in
@@ -57,8 +61,9 @@ and check_stat (ast, table) =
     ({ast with value = SExpr exp' }, table')
   
   | SList stat_list -> 
-    let (stat_list', table') = check_stat_list stat_list table in
-    ({ast with value = SList stat_list'}, table')
+    let table' = symtable_new_scope table in
+    let (stat_list', _) = check_stat_list stat_list table' in
+    ({ast with value = SList stat_list'}, table)
 
   | SWhile (cond, stm) -> 
     let (cond', table') = check_expr (cond, table) in
@@ -76,6 +81,9 @@ and check_stat (ast, table) =
     | _ -> (ast, table))
 
   | SDecl (typ, name, decl) ->
-    let (decl', table') = check_expr (decl, table) in
-    let table'' = symtable_add table' name typ in
-    ({ ast with value = SDecl (typ, name, decl') }, table'')
+    (match symtable_find_within_scope table name with
+    | Some _ -> var_mult_declared_error ast.st_loc ast.en_loc name
+    | None ->
+      let (decl', table') = check_expr (decl, table) in
+      let table'' = symtable_add table' name typ in
+      ({ ast with value = SDecl (typ, name, decl') }, table''))
