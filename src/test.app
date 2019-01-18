@@ -1,1 +1,2 @@
-[<string, int> -> int] x = 5
+int x = 5
+y = 3

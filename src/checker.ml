@@ -1,5 +1,6 @@
 open Ast
 open Checkutils
+open Symtable
 open Err
 
 (* utility function to functionally update expr node with proper type *)
@@ -27,8 +28,15 @@ let rec check_expr (ast, table) =
     (match final_type with
     | TInvalid -> checker_binop_error exp1'.st_loc exp2'.en_loc op exp1'.typ exp2'.typ
     | _ -> ({ ast with value = EBinary (exp1', op, exp2'); typ = final_type }, table''))
-  
-  | _ -> (ast, table)
+  | EAssign (name, op, exp) ->
+    (match symtable_find table name with
+    | None -> var_not_declared_error exp.st_loc exp.en_loc name
+    | Some typ -> 
+      let (exp', table') = check_expr (exp, table) in
+      let final_type = check_binary op typ exp'.typ in
+      match final_type with
+      | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
+      | _        -> ({ ast with value = EAssign (name, op, exp')}, table'))
 
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
@@ -66,5 +74,8 @@ and check_stat (ast, table) =
     (match cond_exp'.typ with 
     | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod')}, table''')
     | _ -> (ast, table))
-  
-  | _ -> (ast, table)
+
+  | SDecl (typ, name, decl) ->
+    let (decl', table') = check_expr (decl, table) in
+    let table'' = symtable_add table' name typ in
+    ({ ast with value = SDecl (typ, name, decl') }, table'')

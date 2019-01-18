@@ -11,7 +11,9 @@ let fname = "src/test.app"
 let parse_with_error lexbuf =
   let (stat, _) = check_stat ((Parser.main Lexer.read lexbuf), symtable_init) in
   try (Printf.printf "%s\n" (show_stat_silent stat)) with
-  | LexerError msg | TypeError msg -> Printf.printf "%s" msg 
+  | LexerError msg -> Printf.printf "%s" msg 
+  | TypeError msg -> Printf.printf "%s" msg 
+  | ScopeError msg -> Printf.printf "%s" msg 
 
 let () = 
   (* get buffer for source file *)

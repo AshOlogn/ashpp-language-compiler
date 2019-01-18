@@ -5,6 +5,7 @@ open Ast
 (* Exceptions across different stages of compilation *)
 exception LexerError of string
 exception TypeError of string
+exception ScopeError of string
 
 (* general-purpose error format *)
 let gen_location_format l1 c1 l2 c2 = 
@@ -37,3 +38,6 @@ let checker_binop_error spos epos op t1 t2 =
     (show_pretty_op_bin op) (show_pretty_tp t1) (show_pretty_tp t2)
   in
     raise (TypeError (gen_err_format spos epos "Type" msg))
+
+let var_not_declared_error spos epos name =
+  raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s not declared" name)))
