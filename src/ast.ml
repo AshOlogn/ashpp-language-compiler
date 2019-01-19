@@ -6,7 +6,7 @@ https://gitlab.inria.fr/fpottier/menhir/tree/master/demos/calc-ast-dune *)
 
 (* Type data types, support recursive types like int[][] *)
 type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
-[@@deriving show]
+[@@deriving show, eq]
 
 (* Dummy type used in expressions when parsing with Menhir to defer type-checking to later code *)
 (* Invalid used in type-checker to signify type error *)
@@ -18,7 +18,7 @@ type tp =
   | TClass of string
   | TDummy
   | TInvalid
-[@@deriving show]
+[@@deriving show, eq]
 
 (* Operation types *)
 type op_bin = 

@@ -42,7 +42,6 @@ let rec check_expr (ast, table) =
       | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
       | _        -> ({ ast with value = EAssign (name, op, exp')}, table'))
 
-
 (* this function maps over list of statements, returning checked list and updated symtable *)
 let rec check_stat_list stat_list table = 
   match stat_list with 

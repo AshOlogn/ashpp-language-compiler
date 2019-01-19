@@ -20,6 +20,7 @@ let check_unary op t =
 
 let check_binary op t1 t2 =
   match op with
+  | OIden -> if equal_tp t1 t2 then t1 else TInvalid
   | OExp | OMult | ODiv | OMod | OAdd | OSub  ->
     (match (t1, t2) with 
     | (TPrim TInt, TPrim TInt) -> TPrim TInt
@@ -53,4 +54,3 @@ let check_binary op t1 t2 =
     | (TPrim TBool, TPrim TBool) -> TPrim TBool
     | (TPrim TInt, TPrim TInt) -> TPrim TInt
     | _                        -> TInvalid)
-  | _ -> TInvalid

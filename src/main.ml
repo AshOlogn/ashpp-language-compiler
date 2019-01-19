@@ -22,6 +22,6 @@ let () =
   let lexbuf = Lexing.from_channel inb  in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fname };
 
-  (* parse and lex *)
+  (* lex, parse, type-check *)
   parse_with_error lexbuf;
   In_channel.close inb;

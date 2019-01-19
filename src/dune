@@ -10,5 +10,5 @@
 (executable
   (name      main)
   (libraries core stdio)
-  (preprocess (pps ppx_deriving.show ppx_jane))
+  (preprocess (pps ppx_deriving.show ppx_deriving.eq ppx_jane))
 )
