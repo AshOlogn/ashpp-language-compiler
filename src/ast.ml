@@ -1,4 +1,3 @@
-open Lexing
 open Printf
 
 (* Some type naming terminology and inspiration for node type from Menhir demo: 
@@ -115,32 +114,6 @@ let show_pretty_op_un op =
   | OLogNot -> "!" | OBitNot -> "~" | OPos -> "+" | ONeg -> "-"
 
 (* "show" printing utilities for expressions, and statements *)
-let show_position p = sprintf "{ Lexing.pos_fname = %s; pos_lnum = %d; pos_bol = %d; pos_cnum = %d }" 
-                        p.pos_fname p.pos_lnum p.pos_bol p.pos_cnum
-
-let rec show_raw_expr ex =
-  match ex with
-  | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
-  | ELitFloat f         -> sprintf "(Ast.ELitFloat %f)" f
-  | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
-  | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
-  | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
-  | EVar str            -> sprintf "(Ast.EVar %s)" str
-  | EBinary (l, op, r)  -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
-  | EUnary (op, exp)    -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
-  | EAssign (var_name, assign, ex) -> 
-      let assign_str = match assign with
-        | OIden -> "="
-        | OAdd -> "+="
-        | OSub -> "-="
-        | OMult -> "*="
-        | ODiv -> "/="
-        | _    -> "invalid_assign_op"
-      in
-      sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr ex)
-and show_expr ex = sprintf "[%s %s %s]" 
-                      (show_raw_expr ex.value) (show_position ex.st_loc) (show_position ex.en_loc)
-
 let rec show_raw_expr_silent ex =
   match ex with
   | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
@@ -162,15 +135,6 @@ let rec show_raw_expr_silent ex =
       in
       sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
 and show_expr_silent ex = sprintf "%s" (show_raw_expr_silent ex.value)
-
-let rec show_raw_stat st =
-  match st with
-  | SExpr ex            -> sprintf "(Ast.SExpr %s)" (show_expr ex)
-  | SList xs            -> sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat xs))  
-  | SWhile (cond, body) -> sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
-  | SDecl (ty, var_name, ex) -> sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
-  | _                   -> "invalid statement token"
-and show_stat st = sprintf "[%s %s %s]" (show_raw_stat st.value) (show_position st.st_loc) (show_position st.en_loc)
 
 let rec show_raw_stat_silent st =
   match st with
