@@ -40,7 +40,7 @@ let rec check_expr (ast, table) =
       let final_type = check_binary op typ exp'.typ in
       match final_type with
       | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
-      | _        -> ({ ast with value = EAssign (name, op, exp')}, table'))
+      | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
 let rec check_stat_list stat_list table = 
@@ -84,5 +84,8 @@ and check_stat (ast, table) =
     | Some _ -> var_mult_declared_error ast.st_loc ast.en_loc name
     | None ->
       let (decl', table') = check_expr (decl, table) in
-      let table'' = symtable_add table' name typ in
-      ({ ast with value = SDecl (typ, name, decl') }, table''))
+      match check_binary OIden typ decl'.typ with
+      | TInvalid -> checker_binop_error ast.st_loc ast.en_loc OIden typ decl'.typ
+      | _        ->  
+        let table'' = symtable_add table' name typ in 
+        ({ ast with value = SDecl (typ, name, decl') }, table''))

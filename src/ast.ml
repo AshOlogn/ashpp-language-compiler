@@ -96,7 +96,7 @@ and show_pretty_tp typ =
 
 let show_pretty_op_bin op = 
   match op with
-  | OIden -> "iden"
+  | OIden -> "="
   | OExp -> "**"
   | OMult -> "*" | ODiv -> "/" | OMod -> "%"
   | OAdd -> "+" | OSub -> "-" 

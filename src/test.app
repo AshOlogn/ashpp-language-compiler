@@ -1,2 +1,2 @@
-int x = 5
-x = 5.0
+float x = 3.14
+int y = x = 6.6

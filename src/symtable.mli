@@ -14,7 +14,7 @@ val symtable_add_scope : 'a symtable -> string -> 'a -> int -> 'a symtable
 (** returns option of value mapped to given id in the scope provided or higher up *)
 val symtable_find_scope : 'a symtable -> string -> int -> 'a option
 
-(* only look for variable in innermost scope (to see if declarations are valid) *)
+(** only look for variable in innermost scope (to see if declarations are valid) *)
 val symtable_find_within_scope : 'a symtable -> string -> 'a option
 
 (** add provided id-value mapping in the innermost declared scope *)
