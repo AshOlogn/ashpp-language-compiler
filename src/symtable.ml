@@ -10,9 +10,7 @@ let symtable_new_scope table = { table with scope = table.scope+1 }
 (* general insertion/removal/find in which scope can be specified *)
 let symtable_add_scope symtable id typ scope = 
   let new_table = 
-    (match Map.add symtable.table ~key: (id ^ "!" ^ (string_of_int scope)) ~data:typ with 
-    | `Ok tabl -> tabl
-    | _        -> symtable.table)
+    Map.set symtable.table ~key: (id ^ "!" ^ (string_of_int scope)) ~data:typ
   in {symtable with table = new_table}
 
 (* find in any scope, so go up if not declared in this one *)

@@ -21,7 +21,11 @@ let check_unary op t =
 let check_binary op t1 t2 =
   match op with
   | OIden -> if equal_tp t1 t2 then t1 else TInvalid
-  | OExp | OMult | ODiv | OMod | OAdd | OSub  ->
+  | OExp ->
+    (match (t1, t2) with 
+    | (TPrim TFloat, TPrim TFloat) -> TPrim TFloat
+    | _ -> TInvalid)
+  | OMult | ODiv | OMod | OAdd | OSub  ->
     (match (t1, t2) with 
     | (TPrim TInt, TPrim TInt) -> TPrim TInt
     | (TPrim TFloat, TPrim TFloat) -> TPrim TFloat
@@ -32,8 +36,8 @@ let check_binary op t1 t2 =
     | _ -> TInvalid)
   | OLt | OGt | OLeq | OGeq ->
     (match (t1, t2) with 
-      | (TPrim TInt, TPrim TInt) -> TPrim TInt
-      | (TPrim TFloat, TPrim TFloat) -> TPrim TFloat
+      | (TPrim TInt, TPrim TInt) -> TPrim TBool
+      | (TPrim TFloat, TPrim TFloat) -> TPrim TBool
       | _ -> TInvalid)
   | OEq | ONeq ->
     (match (t1, t2) with 

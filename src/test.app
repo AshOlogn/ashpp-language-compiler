@@ -1,2 +1,3 @@
-float x = 3.14
-int y = x = 6.6
+int x = 10
+int y = x = 5
+y = 2*x
