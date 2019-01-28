@@ -25,6 +25,7 @@ let eval_unary op e =
     | ELitBool b -> Some (ELitBool (not b))
     | _          -> None)
 
+(* this function also optimizes out trivial case, like 0*x, x/1, etc. *)
 let eval_binary op e1 e2 =
   match op with
   (* OIden just returns the right-hand side *)
@@ -38,35 +39,47 @@ let eval_binary op e1 e2 =
     | _                            -> None)
   | OMult ->
     (match (e1, e2) with
+    | (ELitInt 0, _)               
+    | (_, ELitInt 0)               -> Some (ELitInt 0)
+    | (ELitInt 1, other)
+    | (other, ELitInt 1)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1*i2))
     | (ELitFloat f1, ELitFloat f2) -> Some (ELitFloat (f1 *. f2))
     | _                            -> None)
   | ODiv ->
     (match (e1, e2) with
+    | (other, ELitInt 1)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1/i2))
     | (ELitFloat f1, ELitFloat f2) -> Some (ELitFloat (f1 /. f2))
     | _                            -> None) 
   | OMod ->
     (match (e1, e2) with
+    (* any integer mod 1 = 0 *)
+    | (_, ELitInt 1)               -> Some (ELitInt 0)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 mod i2))
     | (ELitFloat f1, ELitFloat f2) -> Some (ELitFloat (mod_float f1 f2))
     | _                            -> None) 
   | OAdd -> 
     (match (e1, e2) with
+    | (ELitInt 0, other)           
+    | (other, ELitInt 0)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1+i2))
     | (ELitFloat f1, ELitFloat f2) -> Some (ELitFloat (f1 +. f2))
     | _                            -> None) 
   | OSub -> 
     (match (e1, e2) with
+    | (other, ELitInt 0)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1-i2))
     | (ELitFloat f1, ELitFloat f2) -> Some (ELitFloat (f1 -. f2))
     | _                            -> None)
   | OBitl ->
     (match (e1, e2) with
+    | (other, ELitInt 1)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 lsl i2))
     | _                            -> None)  
   | OBitr ->
     (match (e1, e2) with
+    | (other, ELitInt 1)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 lsr i2))
     | _                            -> None) 
   | OLt -> 
@@ -103,25 +116,36 @@ let eval_binary op e1 e2 =
     | _                            -> None)
   | OBitAnd ->
     (match (e1, e2) with
+    | (ELitInt 0, _)
+    | (_, ELitInt 0)               -> Some (ELitInt 0)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 land i2))
     | _                            -> None)
   | OBitXor ->
     (match (e1, e2) with
+    | (ELitInt 0, other)
+    | (other, ELitInt 0)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 lxor i2))
     | _                            -> None)
   | OBitOr ->
     (match (e1, e2) with
+    | (ELitInt 0, other)
+    | (other, ELitInt 0)           -> Some (other)
     | (ELitInt i1, ELitInt i2)     -> Some (ELitInt (i1 lor i2))
     | _                            -> None)
   | OLogAnd ->
     (match (e1, e2) with
-    | (ELitBool b1, ELitBool b2)   -> Some (ELitBool (b1 && b2))
+    | (ELitBool false, _)
+    | (_, ELitBool false)          -> Some (ELitBool false)
+    | (ELitBool true, other)
+    | (other, ELitBool true)          -> Some (other)
     | _                            -> None)
   | OLogOr ->
     (match (e1, e2) with
-    | (ELitBool b1, ELitBool b2)   -> Some (ELitBool (b1 || b2))
-    | _                            -> None)
-
+    | (ELitBool true, _)           
+    | (_, ELitBool true)            -> Some (ELitBool true)
+    | (ELitBool false, other)      
+    | (other, ELitBool false)       -> Some (other)
+    | _                             -> None)
   | OGenAnd ->
     (match (e1, e2) with
     | (ELitInt i1, ELitInt i2)   -> Some (ELitInt (i1 land i2))
