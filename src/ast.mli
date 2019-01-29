@@ -43,6 +43,8 @@ type op_un = ONeg | OPos | OBitNot | OLogNot
 (* For statement nodes, type is always dummy since statements don't return values *)
 type 'a node = { value: 'a; typ: tp; st_loc: Lexing.position; en_loc: Lexing.position;} 
 
+type fun_arg = tp * string
+
 (* Expression node, wrapped and unwrapped *)
 type expr = raw_expr node 
 and raw_expr = 
@@ -55,9 +57,10 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
+  | EFunction of fun_arg list * stat
 
 (* Statement node *)
-type stat = raw_stat node
+and stat = raw_stat node
 and raw_stat = 
   | SExpr of expr
   | SList of stat list

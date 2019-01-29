@@ -41,9 +41,24 @@ let rec check_expr (ast, table) =
       match final_type with
       | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
       | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
+  
+  | EFunction (args, body) -> 
+  (* add all the function parameters to symbol table in new scope *)
+  (* TODO: make sure function args have unique names *)
+  let num_args = List.length args in
+  let ref_table = ref (symtable_new_scope table) in
+  for i = 0 to (num_args-1) do
+    let arg = List.nth args i in 
+    ref_table := symtable_add !ref_table (snd arg) (fst arg);
+  done;
+  (* now check the function body *)
+  let (body', _) = check_stat (body, !ref_table) in
+  ({ast with value = EFunction (args, body')}, table)
+    
+
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
-let rec check_stat_list stat_list table = 
+and check_stat_list stat_list table = 
   match stat_list with 
   | []        -> ([], table)
   | (s :: ss) ->

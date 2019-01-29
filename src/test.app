@@ -1,1 +1,1 @@
-bool x = true || false
+<int>->int x = function ( int x, int y ) x+y

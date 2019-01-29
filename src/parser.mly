@@ -31,7 +31,7 @@
 %token <string> VARIABLE
 
 (* Reserved Words *)
-%token FOR WHILE DO IF ELIF ELSE BREAK SWITCH CASE
+%token FOR WHILE DO IF ELIF ELSE BREAK SWITCH CASE FUNCTION
 %token CLASS EXTENDS FUN RETURN NEW PRINT PRINTLN
 %token INT_T CHAR_T FLOAT_T BOOL_T STRING_T VOID_T
 
@@ -134,6 +134,10 @@ let e_atom :=
   | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
   | wrap_expr (~ = VARIABLE; <EVar>)
+  | wrap_expr (FUNCTION; LEFT_PAREN; ~ = list_delimited(fun_arg, COMMA); RIGHT_PAREN; ~ = s; <EFunction>) 
+
+let fun_arg :=
+  | x = t; y = VARIABLE; { (x, y) }
 
 (* Operator token conversions *)
 let assign_op ==

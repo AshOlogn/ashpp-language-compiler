@@ -134,6 +134,7 @@ let rec const_fold_expr (ast, table) =
 
         | ValueString _ 
         | ValueBool _ -> (ast, table))))
+    | EFunction (_,_) -> (ast, table)
           
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
