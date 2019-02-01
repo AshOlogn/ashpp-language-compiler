@@ -51,6 +51,7 @@ let main :=
 (* Statement grammar *)
 let s := 
   | wrap_stat (~ = e; <SExpr>)
+  | wrap_stat (RETURN; ~ = e; <SReturn>)
   | wrap_stat (LEFT_BRACE; ~ = list(s); RIGHT_BRACE; <SList>)
   | wrap_stat (WHILE; ~ = e; ~ = s; <SWhile>)
   | wrap_stat (~ = t; ~ = VARIABLE; EQ; ~ = e; <SDecl>)

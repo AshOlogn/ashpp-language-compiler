@@ -53,8 +53,46 @@ let rec check_expr (ast, table) =
   done;
   (* now check the function body *)
   let (body', _) = check_stat (body, !ref_table) in
-  ({ast with value = EFunction (args, body')}, table)
-    
+  (* now do return value analysis assuming function body is checker *)
+  let (ret_type, complete) = check_return body' (TPrim TVoid, true) in
+    if not complete then 
+      (incomplete_return_error ast.st_loc ast.en_loc ret_type)
+    else
+      ({ast with value = EFunction (args, body'); typ = ret_type }, table)
+
+(* this function checks whether a function returns a value of a required type *)
+(* assumes function body is checked for type/scope errors *)
+(* ast - function body, ret_type - function return type (inferred), complete - if every code path returns something *)
+and check_return ast (ret_type, complete) = 
+  match ast.value with
+  (* expression don't have return type *)
+  | SExpr _                 -> (TPrim TVoid, true)
+  | SList stat_list         -> 
+    let num_stats = List.length stat_list in
+    let complete'' = ref complete in
+    let ret_type'' = ref ret_type in
+    (* loop through all statements in list, updating completeness and return type if void now *)
+    for i = 0 to (num_stats-1) do
+      let curr_stat = List.nth stat_list i in
+      let (ret_type', complete') = check_return curr_stat (ret_type, complete) in
+      if (ret_type != (TPrim TVoid)) && (ret_type != ret_type') then 
+        (inconsistent_return_error curr_stat.st_loc curr_stat.en_loc ret_type ret_type')
+      else
+        (* only complete if every sub-statement is complete *)
+        complete'' := !complete'' && complete';
+        (* update type if void right now but not void in statement body *)
+        ret_type'' := if !ret_type'' == (TPrim TVoid) then ret_type' else !ret_type'' 
+    done;
+    (!ret_type'', !complete'') 
+        
+  | SWhile (_, stm)         -> 
+    let (ret_type', complete') = check_return stm (ret_type, complete) in
+    if (ret_type != (TPrim TVoid)) && (ret_type != ret_type') then
+      (inconsistent_return_error stm.st_loc stm.en_loc ret_type ret_type')
+    else ((if ret_type != (TPrim TVoid) then ret_type else ret_type'), complete && complete')
+  
+  | SReturn exp             -> (exp.typ, true)
+  | _ -> (TPrim TVoid, true)
 
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
@@ -104,3 +142,4 @@ and check_stat (ast, table) =
       | _        ->  
         let table'' = symtable_add table' name typ in 
         ({ ast with value = SDecl (typ, name, decl') }, table''))
+  | _ -> (ast, table)

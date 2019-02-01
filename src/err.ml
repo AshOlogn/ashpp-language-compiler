@@ -6,6 +6,7 @@ open Ast
 exception LexerError of string
 exception TypeError of string
 exception ScopeError of string
+exception ReturnError of string
 
 (* general-purpose error format *)
 let gen_location_format l1 c1 l2 c2 = 
@@ -44,3 +45,13 @@ let var_not_declared_error spos epos name =
 
 let var_mult_declared_error spos epos name = 
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s already declared in this scope" name)))
+
+let inconsistent_return_error spos epos typ_exp typ_ret = 
+  let msg = sprintf "statement has return of type %s but function return type is %s" 
+    (show_pretty_tp typ_ret) (show_pretty_tp typ_exp)
+  in 
+  raise (ReturnError (gen_err_format spos epos "Return" msg))
+
+let incomplete_return_error spos epos typ_ret = 
+  let msg = sprintf "function has return type %s but not all code paths return" (show_pretty_tp typ_ret) in
+  raise (ReturnError (gen_err_format spos epos "Return" msg))

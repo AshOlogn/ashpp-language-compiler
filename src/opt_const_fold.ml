@@ -183,3 +183,4 @@ and const_fold_stat (ast, table) =
     in
     let table'' = symtable_add table' name var_value in 
     ({ ast with value = SDecl (typ, name, decl') }, table'')
+  | _ -> (ast, table)

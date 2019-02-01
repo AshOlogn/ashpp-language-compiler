@@ -15,7 +15,7 @@ type tp =
   | TNtuple of tp list
   | TFun of tp list * tp
   | TClass of string
-  | TDummy
+  | TDummy 
   | TInvalid
 [@@deriving show, eq]
 
@@ -71,6 +71,7 @@ and raw_stat =
   | SWhile of expr * stat
   | SFor of stat * expr * stat
   | SDecl of tp * string * expr
+  | SReturn of expr
 
 (* Utility functions to access elements of $loc tuple in .mly *) 
 let fst tup = let (x,_) = tup in x
@@ -96,6 +97,7 @@ and show_pretty_tp typ =
   | TClass cname -> cname
   | TDummy -> "DUMMY"
   | TInvalid -> "INVALID"
+
 
 let show_pretty_op_bin op = 
   match op with

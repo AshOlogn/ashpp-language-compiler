@@ -67,6 +67,7 @@ and raw_stat =
   | SWhile of expr * stat
   | SFor of stat * expr * stat
   | SDecl of tp * string * expr
+  | SReturn of expr
 
 (** Get the first element out of a 2-element tuple *) 
 val fst : ('a * 'b) -> 'a
