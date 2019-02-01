@@ -164,11 +164,12 @@ and const_fold_stat (ast, table) =
     let (stm', table'') = const_fold_stat (stm, table') in
     ({ ast with value = SWhile (cond', stm') }, table'')
 
-  | SFor (stm_init, cond_exp, stm_bod) -> 
+  | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
     let (stm_init', table') = const_fold_stat (stm_init, table) in
     let (cond_exp', table'') = const_fold_expr (cond_exp, table') in
     let (stm_bod', table''') = const_fold_stat (stm_bod, table'') in
-    ({ ast with value = SFor (stm_init', cond_exp', stm_bod')}, table''')
+    let (stm_update', table'''') = const_fold_stat (stm_update, table''') in
+    ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
 
   | SDecl (typ, name, decl) ->
     let (decl', table') = const_fold_expr (decl, table) in

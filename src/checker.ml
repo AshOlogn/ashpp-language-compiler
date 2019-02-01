@@ -58,7 +58,8 @@ let rec check_expr (ast, table) =
     if not complete then 
       (incomplete_return_error ast.st_loc ast.en_loc ret_type)
     else
-      ({ast with value = EFunction (args, body'); typ = ret_type }, table)
+      let fun_type = TFun ((List.map fst args), ret_type) in
+      ({ast with value = EFunction (args, body'); typ = fun_type }, table)
 
 (* this function checks whether a function returns a value of a required type *)
 (* assumes function body is checked for type/scope errors *)
@@ -124,12 +125,13 @@ and check_stat (ast, table) =
     | TPrim TBool -> ({ ast with value = SWhile (cond', stm') }, table'')
     | _ -> (ast, table))
 
-  | SFor (stm_init, cond_exp, stm_bod) -> 
+  | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
     let (stm_init', table') = check_stat (stm_init, table) in
     let (cond_exp', table'') = check_expr (cond_exp, table') in
     let (stm_bod', table''') = check_stat (stm_bod, table'') in
+    let (stm_update', table'''') = check_stat (stm_update, table''') in
     (match cond_exp'.typ with 
-    | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod')}, table''')
+    | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
     | _ -> (ast, table))
 
   | SDecl (typ, name, decl) ->
@@ -142,4 +144,7 @@ and check_stat (ast, table) =
       | _        ->  
         let table'' = symtable_add table' name typ in 
         ({ ast with value = SDecl (typ, name, decl') }, table''))
-  | _ -> (ast, table)
+
+  | SReturn exp -> 
+      let (exp', _) = check_expr (exp, table) in 
+      ({ ast with value = (SReturn exp')}, table)

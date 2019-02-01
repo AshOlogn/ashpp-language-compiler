@@ -69,7 +69,7 @@ and raw_stat =
   | SExpr of expr
   | SList of stat list
   | SWhile of expr * stat
-  | SFor of stat * expr * stat
+  | SFor of stat * expr * stat * stat
   | SDecl of tp * string * expr
   | SReturn of expr
 

@@ -1,1 +1,6 @@
-<int>->int x = function ( int x, int y ) x+y
+<int>->int x = function ( int x ) {
+
+    while (true) {
+        return x
+    }
+}
