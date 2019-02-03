@@ -40,12 +40,22 @@ let checker_binop_error spos epos op t1 t2 =
   in
     raise (TypeError (gen_err_format spos epos "Type" msg))
 
+let while_cond_error spos epos typ =
+  let msg = sprintf "'while' loop condition expression is of %s type, expected bool" (show_pretty_tp typ) in
+  raise (TypeError (gen_err_format spos epos "Type" msg))
+
+let for_cond_error spos epos typ =
+  let msg = sprintf "'for' loop termination condition expression is of %s type, expected bool" (show_pretty_tp typ) in
+  raise (TypeError (gen_err_format spos epos "Type" msg))
+
+(* variable declaration errors *)  
 let var_not_declared_error spos epos name =
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s not declared" name)))
 
 let var_mult_declared_error spos epos name = 
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s already declared in this scope" name)))
 
+(* static function errors *)
 let inconsistent_return_error spos epos typ_exp typ_ret = 
   let msg = sprintf "statement has return of type %s but function return type is %s" 
     (show_pretty_tp typ_ret) (show_pretty_tp typ_exp)

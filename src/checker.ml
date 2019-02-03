@@ -43,58 +43,69 @@ let rec check_expr (ast, table) =
       | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
   
   | EFunction (args, body) -> 
-  (* add all the function parameters to symbol table in new scope *)
-  (* TODO: make sure function args have unique names *)
-  let num_args = List.length args in
-  let ref_table = ref (symtable_new_scope table) in
-  for i = 0 to (num_args-1) do
-    let arg = List.nth args i in 
-    ref_table := symtable_add !ref_table (snd arg) (fst arg);
-  done;
-  (* now check the function body *)
-  let (body', _) = check_stat (body, !ref_table) in
-  (* now do return value analysis assuming function body is checker *)
-  let (ret_type, complete) = check_return body' (TPrim TVoid, true) in
-    if not complete then 
-      (incomplete_return_error ast.st_loc ast.en_loc ret_type)
-    else
-      let fun_type = TFun ((List.map fst args), ret_type) in
-      ({ast with value = EFunction (args, body'); typ = fun_type }, table)
+    (* add all the function parameters to symbol table in new scope *)
+    (* TODO: make sure function args have unique names *)
+    let num_args = List.length args in
+    let ref_table = ref (symtable_new_scope table) in
+    for i = 0 to (num_args-1) do
+      let arg = List.nth args i in 
+      ref_table := symtable_add !ref_table (snd arg) (fst arg);
+    done;
+    (* now check the function body *)
+    let (body', _) = check_stat (body, !ref_table) in
+    (* now do return value analysis assuming function body is checker *)
+    let (ret_type, complete, body'') = check_return body' in
+      if not complete then 
+        (incomplete_return_error ast.st_loc ast.en_loc ret_type)
+      else
+        let fun_type = TFun ((List.map fst args), ret_type) in
+        ({ast with value = EFunction (args, body''); typ = fun_type }, table)
 
 (* this function checks whether a function returns a value of a required type *)
 (* assumes function body is checked for type/scope errors *)
 (* ast - function body, ret_type - function return type (inferred), complete - if every code path returns something *)
-and check_return ast (ret_type, complete) = 
+and check_return ast  = 
   match ast.value with
   (* expression don't have return type *)
-  | SExpr _                 -> (TPrim TVoid, true)
-  | SList stat_list         -> 
-    let num_stats = List.length stat_list in
-    let complete'' = ref complete in
-    let ret_type'' = ref ret_type in
-    (* loop through all statements in list, updating completeness and return type if void now *)
-    for i = 0 to (num_stats-1) do
-      let curr_stat = List.nth stat_list i in
-      let (ret_type', complete') = check_return curr_stat (ret_type, complete) in
-      if (ret_type != (TPrim TVoid)) && (ret_type != ret_type') then 
-        (inconsistent_return_error curr_stat.st_loc curr_stat.en_loc ret_type ret_type')
-      else
-        (* only complete if every sub-statement is complete *)
-        complete'' := !complete'' && complete';
-        (* update type if void right now but not void in statement body *)
-        ret_type'' := if !ret_type'' == (TPrim TVoid) then ret_type' else !ret_type'' 
-    done;
-    (!ret_type'', !complete'') 
-        
-  | SWhile (_, stm)         -> 
-    let (ret_type', complete') = check_return stm (ret_type, complete) in
-    if (ret_type != (TPrim TVoid)) && (ret_type != ret_type') then
-      (inconsistent_return_error stm.st_loc stm.en_loc ret_type ret_type')
-    else ((if ret_type != (TPrim TVoid) then ret_type else ret_type'), complete && complete')
-  
-  | SReturn exp             -> (exp.typ, true)
-  | _ -> (TPrim TVoid, true)
+  | SExpr _                 -> (TPrim TVoid, false, ast)
 
+  (* loop through statements, perhaps infer return type *)
+  | SList stat_list         ->
+    let num_stats = List.length stat_list in
+    (* container to keep track/update function return value *)
+    let ret_type' = ref (TPrim TVoid) in
+    (* whether this statement list does return *)
+    let complete' = ref false in
+    (* rebuild stat list to prune stuff after return statement *)
+    let stat_list' = ref [] in
+    let i = ref 0 in
+    while !i < num_stats do 
+      let curr_stat = List.nth stat_list !i in
+      (* recursively check the current statement *)
+      let (ret_type, _, curr_stat') = check_return curr_stat in
+      if (!ret_type' != (TPrim TVoid)) && (!ret_type' != ret_type) then
+        (* if return types contradict, then throw an error *)
+        (inconsistent_return_error curr_stat.st_loc curr_stat.en_loc ret_type !ret_type')
+      else
+        (* otherwise, update return type and check for completeness *)
+        ret_type' := if !ret_type' == (TPrim TVoid) then ret_type else !ret_type';
+        stat_list' := curr_stat' :: !stat_list';
+      
+      (* depending on statement just checked, destermine completeness of this stat list *)
+      complete' :=
+        (match curr_stat.value with 
+        | SReturn _ -> true
+        | _         -> false)
+      ;
+
+      (* if the statement is complete, then break out, otherwise increment *)
+      i := if !complete' then num_stats else !i+1;
+    done;
+    (!ret_type', !complete', { ast with value = SList (List.rev !stat_list') } )
+    
+  | SWhile (_, stm)         -> (check_return stm)
+  | SReturn exp             -> (exp.typ, true, ast)
+  | _ -> (TPrim TVoid, false, ast)
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
 and check_stat_list stat_list table = 
@@ -123,7 +134,7 @@ and check_stat (ast, table) =
     let (stm', table'') = check_stat (stm, table') in
     (match cond'.typ with
     | TPrim TBool -> ({ ast with value = SWhile (cond', stm') }, table'')
-    | _ -> (ast, table))
+    | _ -> while_cond_error cond.st_loc cond.en_loc cond'.typ)
 
   | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
     let (stm_init', table') = check_stat (stm_init, table) in
@@ -132,7 +143,7 @@ and check_stat (ast, table) =
     let (stm_update', table'''') = check_stat (stm_update, table''') in
     (match cond_exp'.typ with 
     | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
-    | _ -> (ast, table))
+    | _ -> for_cond_error cond_exp.st_loc cond_exp.en_loc cond_exp'.typ)
 
   | SDecl (typ, name, decl) ->
     (match symtable_find_within_scope table name with

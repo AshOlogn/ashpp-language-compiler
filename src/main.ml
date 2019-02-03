@@ -14,9 +14,10 @@ let parse_with_error lexbuf =
   let (stat, _) = check_stat ((Parser.main Lexer.read lexbuf), symtable_init) in
   let (stat', _) = const_fold_stat (stat, symtable_init) in
   (Printf.printf "%s\n" (show_stat_silent stat')) with
-  | LexerError msg -> Printf.printf "%s" msg 
-  | TypeError msg -> Printf.printf "%s" msg 
-  | ScopeError msg -> Printf.printf "%s" msg 
+  | LexerError msg 
+  | TypeError msg 
+  | ScopeError msg 
+  | ReturnError msg -> Printf.printf "%s" msg 
 
 let () = 
   (* get buffer for source file *)
