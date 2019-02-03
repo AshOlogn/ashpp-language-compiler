@@ -156,9 +156,9 @@ and const_fold_stat_list stat_list table =
     let (slist, table'') = (const_fold_stat_list ss table') in
     (* match on the current folded statement to maybe prune *)
     match s'.value with
-    | SWhile (cond, _) ->
+    | SWhile (cond, body) ->
       (match cond.value with
-      | ELitBool true -> ([s'], table')
+      | ELitBool true -> ([body], table')
       | ELitBool false -> (slist, table'')
       | _ -> (s' :: slist, table''))
     | _ -> (s' :: slist, table'')
@@ -177,6 +177,7 @@ and const_fold_stat (ast, table) =
     ({ast with value = SList stat_list'}, table)
 
   | SWhile (cond, stm) -> 
+    Printf.printf "const fold while\n";
     let (cond', table') = const_fold_expr (cond, table) in
     let (stm', table'') = const_fold_stat (stm, table') in
     ({ ast with value = SWhile (cond', stm') }, table'')

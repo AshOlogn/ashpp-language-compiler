@@ -1,11 +1,10 @@
 <int>->int x = function ( int x ) {
 
-    while ( false ) {
+    while ( true ) {
 
         <int>->void y = function (int y) {
             float y = 5.6
         }
-
         return 5
     }
 

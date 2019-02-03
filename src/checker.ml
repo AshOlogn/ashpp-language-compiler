@@ -103,7 +103,9 @@ and check_return ast  =
     done;
     (!ret_type', !complete', { ast with value = SList (List.rev !stat_list') } )
     
-  | SWhile (_, stm)         -> (check_return stm)
+  | SWhile (cond, stm)         -> 
+    let (return_type, complete, stm') = check_return stm in 
+    (return_type, complete, { ast with value = SWhile (cond, stm') })
   | SReturn exp             -> (exp.typ, true, ast)
   | _ -> (TPrim TVoid, false, ast)
 
