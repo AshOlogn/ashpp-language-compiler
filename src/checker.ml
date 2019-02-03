@@ -55,7 +55,7 @@ let rec check_expr (ast, table) =
     let (body', _) = check_stat (body, !ref_table) in
     (* now do return value analysis assuming function body is checker *)
     let (ret_type, complete, body'') = check_return body' in
-      if not complete then 
+      if not complete && (ret_type != (TPrim TVoid)) then 
         (incomplete_return_error ast.st_loc ast.en_loc ret_type)
       else
         let fun_type = TFun ((List.map fst args), ret_type) in
@@ -79,7 +79,7 @@ and check_return ast  =
     (* rebuild stat list to prune stuff after return statement *)
     let stat_list' = ref [] in
     let i = ref 0 in
-    while !i < num_stats do 
+    while !i < num_stats do
       let curr_stat = List.nth stat_list !i in
       (* recursively check the current statement *)
       let (ret_type, _, curr_stat') = check_return curr_stat in

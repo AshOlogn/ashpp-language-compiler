@@ -134,17 +134,34 @@ let rec const_fold_expr (ast, table) =
 
         | ValueString _ 
         | ValueBool _ -> (ast, table))))
-    | EFunction (_,_) -> (ast, table)
-          
+    
+    | EFunction (args, body) -> 
+      (* first add args to the symbol table *)
+      let num_args = List.length args in
+      let ref_table = ref (symtable_new_scope table) in
+      for i = 0 to (num_args-1) do
+        let arg = List.nth args i in 
+        ref_table := symtable_add !ref_table (snd arg) ValueNone;
+      done;
+      (* replace body field with the folded one *)
+      let (body', _) = const_fold_stat (body, !ref_table) in 
+      ({ast with value = EFunction (args, body'); }, table)
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
-let rec const_fold_stat_list stat_list table = 
+and const_fold_stat_list stat_list table = 
   match stat_list with 
   | []        -> ([], table)
   | (s :: ss) ->
-    let (s', table') = const_fold_stat (s, table) in 
+    let (s', table') = const_fold_stat (s, table) in
     let (slist, table'') = (const_fold_stat_list ss table') in
-    (s' :: slist, table'')
+    (* match on the current folded statement to maybe prune *)
+    match s'.value with
+    | SWhile (cond, _) ->
+      (match cond.value with
+      | ELitBool true -> ([s'], table')
+      | ELitBool false -> (slist, table'')
+      | _ -> (s' :: slist, table''))
+    | _ -> (s' :: slist, table'')
 
 (* this function traverses the preliminary AST and does type/scope-checking *)
 (* returns an AST with proper type annotations in place of "dummy" *)

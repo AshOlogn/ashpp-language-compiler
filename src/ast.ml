@@ -48,6 +48,7 @@ type op_un = ONeg | OPos | OBitNot | OLogNot
 type 'a node = { value: 'a; typ: tp; st_loc: Lexing.position; en_loc: Lexing.position;} 
 
 type fun_arg = tp * string
+[@@deriving show]
 
 (* Expression node, wrapped and unwrapped *)
 type expr = raw_expr node 
@@ -139,14 +140,16 @@ let rec show_raw_expr_silent ex =
         | _    -> "invalid_assign_op"
       in
       sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
-  | EFunction (_,_) -> sprintf "(Ast.EFunction)"
+  | EFunction (args, body) -> sprintf "(Ast.EFunction [%s], [%s])" 
+      (String.concat ", " (List.map show_fun_arg args)) (show_stat_silent body)
 and show_expr_silent ex = sprintf "%s" (show_raw_expr_silent ex.value)
 
-let rec show_raw_stat_silent st =
+and show_raw_stat_silent st =
   match st with
   | SExpr ex            -> sprintf "(Ast.SExpr %s)" (show_expr_silent ex)
   | SList xs            -> sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat_silent xs))  
   | SWhile (cond, body) -> sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr_silent cond) (show_stat_silent body)
   | SDecl (ty, var_name, ex) -> sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr_silent ex)
+  | SReturn ex          -> sprintf "(Ast.SReturn %s)" (show_expr_silent ex)
   | _                   -> "invalid statement token"
 and show_stat_silent st = sprintf "%s" (show_raw_stat_silent st.value)
