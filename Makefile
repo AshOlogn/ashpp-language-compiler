@@ -1,8 +1,8 @@
 build:
-	dune build @install && dune build @install src/main.exe
+	dune build @install src && dune build main.exe
 
 run:
-	dune exec src/main.exe
+	./_build/default/main.exe
 
 clean:
 	dune clean
