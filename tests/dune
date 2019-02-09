@@ -1,0 +1,4 @@
+(test
+    (name src_test) 
+    (libraries src oUnit)
+)
