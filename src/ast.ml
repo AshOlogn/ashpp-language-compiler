@@ -73,6 +73,8 @@ and raw_stat =
   | SFor of stat * expr * stat * stat
   | SDecl of tp * string * expr
   | SReturn of expr
+  | SIf of expr * stat
+  | SIfElse of expr * stat * stat
 
 (* Utility functions to access elements of $loc tuple in .mly *) 
 let fst tup = let (x,_) = tup in x
@@ -120,7 +122,7 @@ let show_pretty_op_un op =
   | OLogNot -> "!" | OBitNot -> "~" | OPos -> "+" | ONeg -> "-"
 
 (* "show" printing utilities for expressions, and statements *)
-let rec show_raw_expr_silent ex =
+let rec show_raw_expr ex =
   match ex with
   | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
   | ELitFloat f         -> sprintf "(Ast.ELitFloat %f)" f
@@ -128,8 +130,8 @@ let rec show_raw_expr_silent ex =
   | ELitString str      -> sprintf "(Ast.ELitString \"%s\")" str
   | ELitBool b          -> sprintf "(Ast.ELitBool %s)" (if b then "true" else "false")
   | EVar str            -> sprintf "(Ast.EVar %s)" str
-  | EBinary (l, op, r)   -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr_silent l) (show_expr_silent r)
-  | EUnary (op, exp)     -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr_silent exp)
+  | EBinary (l, op, r)   -> sprintf "(Ast.EBinary %s %s %s)" (show_op_bin op) (show_expr l) (show_expr r)
+  | EUnary (op, exp)     -> sprintf "(Ast.EUnary %s %s)" (show_op_un op) (show_expr exp)
   | EAssign (var_name, assign, ex) -> 
       let assign_str = match assign with
         | OIden -> "="
@@ -139,17 +141,19 @@ let rec show_raw_expr_silent ex =
         | ODiv -> "/="
         | _    -> "invalid_assign_op"
       in
-      sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr_silent ex)
+      sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr ex)
   | EFunction (args, body) -> sprintf "(Ast.EFunction [%s], [%s])" 
-      (String.concat ", " (List.map show_fun_arg args)) (show_stat_silent body)
-and show_expr_silent ex = sprintf "%s" (show_raw_expr_silent ex.value)
+      (String.concat ", " (List.map show_fun_arg args)) (show_stat body)
+and show_expr ex = sprintf "%s" (show_raw_expr ex.value)
 
-and show_raw_stat_silent st =
+and show_raw_stat st =
   match st with
-  | SExpr ex            -> sprintf "(Ast.SExpr %s)" (show_expr_silent ex)
-  | SList xs            -> sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat_silent xs))  
-  | SWhile (cond, body) -> sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr_silent cond) (show_stat_silent body)
-  | SDecl (ty, var_name, ex) -> sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr_silent ex)
-  | SReturn ex          -> sprintf "(Ast.SReturn %s)" (show_expr_silent ex)
+  | SExpr ex            -> sprintf "(Ast.SExpr %s)" (show_expr ex)
+  | SList xs            -> sprintf "(Ast.SList [%s])" (String.concat ", " (List.map show_stat xs))  
+  | SWhile (cond, body) -> sprintf "(Ast.SWhile cond = %s, body = %s)" (show_expr cond) (show_stat body)
+  | SDecl (ty, var_name, ex) -> sprintf "(Ast.SAssign %s %s = %s)" (show_tp ty) var_name (show_expr ex)
+  | SReturn ex          -> sprintf "(Ast.SReturn %s)" (show_expr ex)
+  | SIf (cond, body) -> sprintf "(Ast.SIf cond = %s, body = %s)" (show_expr cond) (show_stat body)
+  | SIfElse (cond, body, catch) -> sprintf "(Ast.SIf cond = %s, body = %s, else = %s)" (show_expr cond) (show_stat body) (show_stat catch)
   | _                   -> "invalid statement token"
-and show_stat_silent st = sprintf "%s" (show_raw_stat_silent st.value)
+and show_stat st = sprintf "%s" (show_raw_stat st.value)

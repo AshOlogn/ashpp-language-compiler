@@ -41,7 +41,6 @@ let rec check_expr (ast, table) =
       match final_type with
       | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
       | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
-  
   | EFunction (args, body) -> 
     (* add all the function parameters to symbol table in new scope *)
     (* TODO: make sure function args have unique names *)
@@ -133,20 +132,39 @@ and check_stat (ast, table) =
 
   | SWhile (cond, stm) -> 
     let (cond', table') = check_expr (cond, table) in
-    let (stm', table'') = check_stat (stm, table') in
     (match cond'.typ with
-    | TPrim TBool -> ({ ast with value = SWhile (cond', stm') }, table'')
+    | TPrim TBool -> 
+      let (stm', table'') = check_stat (stm, table') in
+      ({ ast with value = SWhile (cond', stm') }, table'')
     | _ -> while_cond_error cond.st_loc cond.en_loc cond'.typ)
 
   | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
     let (stm_init', table') = check_stat (stm_init, table) in
     let (cond_exp', table'') = check_expr (cond_exp, table') in
-    let (stm_bod', table''') = check_stat (stm_bod, table'') in
-    let (stm_update', table'''') = check_stat (stm_update, table''') in
     (match cond_exp'.typ with 
-    | TPrim TBool -> ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
+    | TPrim TBool -> 
+      let (stm_bod', table''') = check_stat (stm_bod, table'') in
+      let (stm_update', table'''') = check_stat (stm_update, table''') in
+      ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
     | _ -> for_cond_error cond_exp.st_loc cond_exp.en_loc cond_exp'.typ)
 
+  | SIf (cond, body) -> 
+    let (cond', table') = check_expr (cond, table) in
+    (match cond'.typ with
+    | TPrim TBool -> 
+      let (body', table'') = check_stat (body, table') in 
+      ({ ast with value = SIf (cond', body')}, table'')
+    | _ -> for_cond_error cond.st_loc cond.en_loc cond'.typ)
+
+  | SIfElse (cond, body, catch) ->
+    let (cond', table') = check_expr (cond, table) in
+    (match cond'.typ with
+    | TPrim TBool -> 
+      let (body', table'') = check_stat (body, table') in
+      let (catch', table''') = check_stat (catch, table'') in
+      ({ ast with value = SIfElse (cond', body', catch')}, table''')
+    | _ -> for_cond_error cond.st_loc cond.en_loc cond'.typ)
+  
   | SDecl (typ, name, decl) ->
     (match symtable_find_within_scope table name with
     | Some _ -> var_mult_declared_error ast.st_loc ast.en_loc name
@@ -159,5 +177,5 @@ and check_stat (ast, table) =
         ({ ast with value = SDecl (typ, name, decl') }, table''))
 
   | SReturn exp -> 
-      let (exp', _) = check_expr (exp, table) in 
-      ({ ast with value = (SReturn exp')}, table)
+    let (exp', _) = check_expr (exp, table) in 
+    ({ ast with value = (SReturn exp')}, table)

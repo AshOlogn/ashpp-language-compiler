@@ -13,7 +13,7 @@ let parse_with_error lexbuf =
   try
   let (stat, _) = check_stat ((Parser.main Lexer.read lexbuf), symtable_init) in
   let (stat', _) = const_fold_stat (stat, symtable_init) in
-  (Printf.printf "%s\n" (show_stat_silent stat')) with
+  (Printf.printf "%s\n" (show_stat stat')) with
   | LexerError msg 
   | TypeError msg 
   | ScopeError msg 

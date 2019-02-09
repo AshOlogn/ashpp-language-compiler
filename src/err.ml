@@ -48,6 +48,11 @@ let for_cond_error spos epos typ =
   let msg = sprintf "'for' loop termination condition expression is of %s type, expected bool" (show_pretty_tp typ) in
   raise (TypeError (gen_err_format spos epos "Type" msg))
 
+let if_cond_error spos epos typ =
+  let msg = sprintf "'if' condition expression is of %s type, expected bool" (show_pretty_tp typ) in
+  raise (TypeError (gen_err_format spos epos "Type" msg))
+  
+
 (* variable declaration errors *)  
 let var_not_declared_error spos epos name =
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s not declared" name)))

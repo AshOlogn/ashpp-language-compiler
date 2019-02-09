@@ -68,6 +68,8 @@ and raw_stat =
   | SFor of stat * expr * stat * stat
   | SDecl of tp * string * expr
   | SReturn of expr
+  | SIf of expr * stat
+  | SIfElse of expr * stat * stat
 
 (** Get the first element out of a 2-element tuple *) 
 val fst : ('a * 'b) -> 'a
@@ -91,13 +93,13 @@ val show_pretty_op_bin : op_bin -> string
 val show_pretty_op_un : op_un -> string
 
 (** pretty printing of raw expression *)
-val show_raw_expr_silent : raw_expr -> string
+val show_raw_expr : raw_expr -> string
 
 (** pretty printing of expression node *)
-val show_expr_silent : expr -> string
+val show_expr : expr -> string
 
 (** pretty printing of raw statement *)
-val show_raw_stat_silent : raw_stat -> string
+val show_raw_stat : raw_stat -> string
 
 (** pretty printing of statement node *)
-val show_stat_silent : stat -> string
+val show_stat : stat -> string

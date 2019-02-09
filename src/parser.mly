@@ -50,6 +50,21 @@ let main :=
 
 (* Statement grammar *)
 let s := 
+  | matched_s
+  | open_s
+
+let matched_s :=
+  | wrap_stat (IF; ~ = e; ~ = matched_s; ELSE; ~ = matched_dummy; <SIfElse>) 
+  | other_s
+
+let matched_dummy :=
+  | matched_s
+
+let open_s :=
+  | wrap_stat (IF; ~ = e; ~ = s; <SIf>)
+  | wrap_stat (IF; ~ = e; ~ = matched_s; ELSE; ~ = open_s; <SIfElse>)   
+
+let other_s :=
   | wrap_stat (~ = e; <SExpr>)
   | wrap_stat (RETURN; ~ = e; <SReturn>)
   | wrap_stat (LEFT_BRACE; ~ = list(s); RIGHT_BRACE; <SList>)

@@ -1,12 +1,5 @@
-<int>->int x = function ( int x ) {
-
-    while ( true ) {
-
-        <int>->void y = function (int y) {
-            float y = 5.6
-        }
-        return 5
-    }
-
-    return 6
+if ( 2+3 == 5) {
+    int x = 5
+} else {
+    int y = 6
 }
