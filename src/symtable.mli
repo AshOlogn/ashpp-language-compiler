@@ -8,6 +8,9 @@ val symtable_init : 'a symtable
 (** adds a new scope to the symbol table *)
 val symtable_new_scope : 'a symtable -> 'a symtable
 
+(** removes innermost scope from table and deletes variables declared in it *)
+val symtable_leave_scope : 'a symtable -> 'a symtable
+
 (** add specified id-value mapping in specified scope *)
 val symtable_add_scope : 'a symtable -> string -> 'a -> int -> 'a symtable
 

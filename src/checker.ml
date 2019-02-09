@@ -127,42 +127,43 @@ and check_stat (ast, table) =
   
   | SList stat_list -> 
     let table' = symtable_new_scope table in
-    let (stat_list', _) = check_stat_list stat_list table' in
-    ({ast with value = SList stat_list'}, table)
+    let (stat_list', table'') = check_stat_list stat_list table' in
+    ({ast with value = SList stat_list'}, symtable_leave_scope table'')
 
   | SWhile (cond, stm) -> 
-    let (cond', table') = check_expr (cond, table) in
+    let (cond', table') = check_expr (cond, symtable_new_scope table) in
     (match cond'.typ with
     | TPrim TBool -> 
-      let (stm', table'') = check_stat (stm, table') in
-      ({ ast with value = SWhile (cond', stm') }, table'')
+      let (stm', _) = check_stat (stm, table') in
+      ({ ast with value = SWhile (cond', stm') }, symtable_leave_scope table')
     | _ -> while_cond_error cond.st_loc cond.en_loc cond'.typ)
 
   | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
-    let (stm_init', table') = check_stat (stm_init, table) in
+    let (stm_init', table') = check_stat (stm_init, symtable_new_scope table) in
     let (cond_exp', table'') = check_expr (cond_exp, table') in
     (match cond_exp'.typ with 
-    | TPrim TBool -> 
+    | TPrim TBool ->
+      (* body evaluates in a new scope *)
       let (stm_bod', table''') = check_stat (stm_bod, table'') in
       let (stm_update', table'''') = check_stat (stm_update, table''') in
-      ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
+      ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, symtable_leave_scope table'''')
     | _ -> for_cond_error cond_exp.st_loc cond_exp.en_loc cond_exp'.typ)
 
   | SIf (cond, body) -> 
-    let (cond', table') = check_expr (cond, table) in
+    let (cond', table') = check_expr (cond, symtable_new_scope table) in
     (match cond'.typ with
     | TPrim TBool -> 
-      let (body', table'') = check_stat (body, table') in 
-      ({ ast with value = SIf (cond', body')}, table'')
+      let (body', _) = check_stat (body, table') in 
+      ({ ast with value = SIf (cond', body')}, symtable_leave_scope table')
     | _ -> for_cond_error cond.st_loc cond.en_loc cond'.typ)
 
   | SIfElse (cond, body, catch) ->
-    let (cond', table') = check_expr (cond, table) in
+    let (cond', table') = check_expr (cond, symtable_new_scope table) in
     (match cond'.typ with
     | TPrim TBool -> 
-      let (body', table'') = check_stat (body, table') in
-      let (catch', table''') = check_stat (catch, table'') in
-      ({ ast with value = SIfElse (cond', body', catch')}, table''')
+      let (body', _) = check_stat (body, table') in
+      let (catch', _) = check_stat (catch, table') in
+      ({ ast with value = SIfElse (cond', body', catch')}, symtable_leave_scope table')
     | _ -> for_cond_error cond.st_loc cond.en_loc cond'.typ)
   
   | SDecl (typ, name, decl) ->

@@ -152,16 +152,9 @@ and const_fold_stat_list stat_list table =
   match stat_list with 
   | []        -> ([], table)
   | (s :: ss) ->
-    let (s', table') = const_fold_stat (s, table) in
+    let (s', table') = const_fold_stat (s, table) in 
     let (slist, table'') = (const_fold_stat_list ss table') in
-    (* match on the current folded statement to maybe prune *)
-    match s'.value with
-    | SWhile (cond, body) ->
-      (match cond.value with
-      | ELitBool true -> ([body], table')
-      | ELitBool false -> (slist, table'')
-      | _ -> (s' :: slist, table''))
-    | _ -> (s' :: slist, table'')
+    (s' :: slist, table'')
 
 (* this function traverses the preliminary AST and does type/scope-checking *)
 (* returns an AST with proper type annotations in place of "dummy" *)
@@ -173,22 +166,54 @@ and const_fold_stat (ast, table) =
   
   | SList stat_list -> 
     let table' = symtable_new_scope table in
-    let (stat_list', _) = const_fold_stat_list stat_list table' in
-    ({ast with value = SList stat_list'}, table)
+    let (stat_list', table'') = const_fold_stat_list stat_list table' in
+    ({ast with value = SList stat_list'}, symtable_leave_scope table'')
 
   | SWhile (cond, stm) -> 
-    Printf.printf "const fold while\n";
-    let (cond', table') = const_fold_expr (cond, table) in
-    let (stm', table'') = const_fold_stat (stm, table') in
-    ({ ast with value = SWhile (cond', stm') }, table'')
+    let (cond', table') = const_fold_expr (cond, symtable_new_scope table) in
+    (match cond'.value with 
+    | ELitBool false -> ({ast with value = SList []}, symtable_leave_scope table')
+    | _ ->
+      let (stm', table'') = const_fold_stat (stm, table') in
+      ({ ast with value = SWhile (cond', stm') }, symtable_leave_scope table''))
 
   | SFor (stm_init, cond_exp, stm_bod, stm_update) -> 
-    let (stm_init', table') = const_fold_stat (stm_init, table) in
+    let (stm_init', table') = const_fold_stat (stm_init, symtable_new_scope table) in
     let (cond_exp', table'') = const_fold_expr (cond_exp, table') in
     let (stm_bod', table''') = const_fold_stat (stm_bod, table'') in
     let (stm_update', table'''') = const_fold_stat (stm_update, table''') in
-    ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, table'''')
+    ({ ast with value = SFor (stm_init', cond_exp', stm_bod', stm_update')}, symtable_leave_scope table'''')
 
+  | SIf (cond, body) -> 
+    let (cond', table') = const_fold_expr (cond, symtable_new_scope table) in
+    (match cond'.value with 
+    | ELitBool true -> 
+        (* if true, just return the body *)
+        let (body', table'') = const_fold_stat (body, table') in 
+        ({ast with value = SList [body'] }, symtable_leave_scope table'')
+    | ELitBool false -> 
+        (* if false, return empty list *)
+        ({ast with value = SList [] }, symtable_leave_scope table')      
+    | _ -> 
+      let (body', table'') = const_fold_stat (body, table') in 
+      ({ ast with value = SIf (cond', body')}, symtable_leave_scope table''))
+  
+  | SIfElse (cond, body, catch) ->
+    let (cond', table') = const_fold_expr (cond, symtable_new_scope table) in
+    (match cond'.value with 
+    | ELitBool true ->
+        (* if true, only evaluate the body *)
+        let (body', table'') = const_fold_stat (body, table') in 
+        ({ast with value = SList [body']}, symtable_leave_scope table'')
+    | ELitBool false ->
+        (* if false, just evaluate the catch statement *)
+        let (catch', table'') = const_fold_stat (catch, table') in 
+        ({ast with value = SList [catch']}, symtable_leave_scope table'')
+    | _ ->
+      let (body', table'') = const_fold_stat (body, table') in
+      let (catch', table''') = const_fold_stat (catch, table'') in
+      ({ ast with value = SIfElse (cond', body', catch')}, symtable_leave_scope table'''))
+  
   | SDecl (typ, name, decl) ->
     let (decl', table') = const_fold_expr (decl, table) in
     let var_value =
@@ -203,3 +228,16 @@ and const_fold_stat (ast, table) =
     let table'' = symtable_add table' name var_value in 
     ({ ast with value = SDecl (typ, name, decl') }, table'')
   | _ -> (ast, table)
+
+(* go through and get rid of all the nested "empty list" constructs
+   left behind from optimizations *)
+let rec prune_empty ast = 
+  match ast.value with 
+  | SList xs -> 
+      let func {value = value; typ = _; st_loc = _; en_loc = _} = 
+        match value with 
+        | SList [] -> false
+        | _ -> true
+      in
+      {ast with value = SList (List.filter func (List.map prune_empty xs)) }
+  | _ -> ast

@@ -7,6 +7,13 @@ type 'a symtable = { scope: int; table: (string, 'a, String.comparator_witness) 
 let symtable_init = { scope = -1; table = Map.empty (module String) }
 let symtable_new_scope table = { table with scope = table.scope+1 }
 
+(* removes innermost scope from table and deletes variables declared in it *)
+let symtable_leave_scope table = 
+  let scope = table.scope in
+  let not_filter ~substring str = not (String.is_substring ~substring:substring str) in 
+  let filtered_table = Map.filter_keys ~f: (not_filter ~substring:("!" ^ (string_of_int scope))) table.table  in
+  {table = filtered_table; scope = scope-1 }
+
 (* general insertion/removal/find in which scope can be specified *)
 let symtable_add_scope symtable id typ scope = 
   let new_table = 
