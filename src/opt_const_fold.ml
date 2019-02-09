@@ -2,8 +2,6 @@ open Ast
 open Symtable
 open Opt_const_fold_utils
 
-let dummy = "hello, world"
-
 (* value type in symbol table that either holds a literal or expression marker *)
 (* if variable lookup yields literal, directly substitute that into ast, else keep original logic *)
 type literal_value = 
@@ -72,7 +70,7 @@ let rec const_fold_expr (ast, table) =
       | ELitBool b -> ValueBool b
       | _          -> ValueNone)
       in 
-      let table'' = symtable_add table' name lit_value in
+      let table'' = symtable_set table' name lit_value in
       ({ ast with value = exp'.value; }, table'')
     
     | _    -> 
@@ -92,12 +90,12 @@ let rec const_fold_expr (ast, table) =
           (match exp''_val with
           | None -> 
             (* now variable's value is not literal, so reflect that *)
-            let table'' = symtable_add table' name ValueNone in
+            let table'' = symtable_set table' name ValueNone in
             ({ ast with value = EAssign (name, op, exp') }, table'')
           | Some lit ->
             (match lit with 
             | ELitInt i ->
-              let table'' = symtable_add table' name (ValueInt i) in
+              let table'' = symtable_set table' name (ValueInt i) in
               ({ ast with value = lit }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
@@ -107,12 +105,12 @@ let rec const_fold_expr (ast, table) =
           (match exp''_val with
           | None -> 
             (* now variable's value is not literal, so reflect that *)
-            let table'' = symtable_add table' name ValueNone in
+            let table'' = symtable_set table' name ValueNone in
             ({ ast with value = EAssign (name, op, exp') }, table'')
           | Some lit ->
             (match lit with 
             | ELitFloat f ->
-              let table'' = symtable_add table' name (ValueFloat f) in
+              let table'' = symtable_set table' name (ValueFloat f) in
               ({ ast with value = lit }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
@@ -122,12 +120,12 @@ let rec const_fold_expr (ast, table) =
           (match exp''_val with
           | None -> 
             (* now variable's value is not literal, so reflect that *)
-            let table'' = symtable_add table' name ValueNone in
+            let table'' = symtable_set table' name ValueNone in
             ({ ast with value = EAssign (name, op, exp') }, table'')
           | Some lit ->
             (match lit with 
             | ELitChar c ->
-              let table'' = symtable_add table' name (ValueChar c) in
+              let table'' = symtable_set table' name (ValueChar c) in
               ({ ast with value = lit }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))

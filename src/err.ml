@@ -8,6 +8,9 @@ exception TypeError of string
 exception ScopeError of string
 exception ReturnError of string
 
+(* describes errors in compiler implementation itself, not user code *)
+exception CoreError of string 
+
 (* general-purpose error format *)
 let gen_location_format l1 c1 l2 c2 = 
   if l1 == l2 then 
