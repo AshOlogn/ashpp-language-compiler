@@ -5,7 +5,7 @@ open Err
 (* the id name is mangled upon insertion, etc. with scope info, i.e. "name", scope 2 = "name!2" *)
 type 'a symtable = { scope: int; table: (string, 'a, String.comparator_witness) Map.t }
 
-let symtable_init = { scope = -1; table = Map.empty (module String) }
+let symtable_init = { scope = 0; table = Map.empty (module String) }
 let symtable_new_scope table = { table with scope = table.scope+1 }
 
 (* removes innermost scope from table and deletes variables declared in it *)

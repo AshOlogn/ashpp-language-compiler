@@ -1,2 +1,4 @@
 open OUnit2
-let () = assert_equal 5 4;
+
+let () = 
+  run_test_tt_main Symtable_tests.symtable_test

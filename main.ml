@@ -22,6 +22,7 @@ let parse_with_error lexbuf =
   | ReturnError msg -> Printf.printf "%s" msg 
 
 let () = 
+  
   (* get buffer for source file *)
   let inb = In_channel.create fname in
   let lexbuf = Lexing.from_channel inb  in

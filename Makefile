@@ -4,7 +4,10 @@ build:
 run:
 	./_build/default/main.exe
 
+test:
+	dune runtest
+
 clean:
 	dune clean
 
-.PHONY: build run
+.PHONY: build run test
