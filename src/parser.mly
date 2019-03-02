@@ -38,6 +38,32 @@
 (* end of program, invalid token *)
 %token END INVALID
 
+
+(* now some associativity annotations to prevent shift-reduce conflicts *)
+
+%left AND_EQ XOR_EQ OR_EQ BIT_LEFT_EQ BIT_RIGHT_EQ
+%left EQ ADD_EQ SUBTRACT_EQ EXPONENT_EQ MULTIPLY_EQ DIVIDE_EQ MOD_EQ 
+%right QUESTION COLON
+
+%left OR
+%left AND
+
+%left BIT_OR
+%left BIT_XOR
+%left BIT_AND
+
+%left EQ_EQ NOT_EQ
+%left GREATER LESS GREATER_EQ LESS_EQ
+%left BIT_LEFT BIT_RIGHT
+%left MULTIPLY DIVIDE MOD
+%left EXPONENT
+
+
+
+
+
+
+
 %start <Ast.stat> main
 %{ open Ast %}
 
