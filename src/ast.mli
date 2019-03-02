@@ -7,10 +7,10 @@ type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 type tp =
   | TPrim of t_prim
   | TArray of tp
-  | TNtuple of tp list
-  | TFun of tp list * tp
+  | TNtuple of tp list  (* logically (type1, type2, ..., type_n) *)
+  | TFun of tp list     (* logically: type1 -> type2 -> ... -> type_return *)
   | TClass of string
-  | TDummy
+  | TDummy 
   | TInvalid
 [@@deriving show, eq]
 

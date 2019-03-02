@@ -34,8 +34,8 @@ let symtable_set_test _ =
 (* define test suite *)
 let symtable_test = 
   "symtable tests" >:::[
-      "retrieve_test" >:: symtable_retrieve_test;
-      "absent_test" >:: symtable_absent_test; 
-      "scope_test" >:: symtable_scope_test;
-      "set_test" >:: symtable_set_test;
+  "retrieve_test" >:: symtable_retrieve_test;
+  "absent_test" >:: symtable_absent_test; 
+  "scope_test" >:: symtable_scope_test;
+  "set_test" >:: symtable_set_test;
 ]

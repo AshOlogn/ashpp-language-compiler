@@ -12,8 +12,8 @@ type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 type tp =
   | TPrim of t_prim
   | TArray of tp
-  | TNtuple of tp list
-  | TFun of tp list * tp
+  | TNtuple of tp list  (* logically (type1, type2, ..., type_n) *)
+  | TFun of tp list     (* logically: type1 -> type2 -> ... -> type_return *)
   | TClass of string
   | TDummy 
   | TInvalid
@@ -91,16 +91,19 @@ let rec show_pretty_tuple tup =
   if List.length tup == 0 then "()" else
   "(" ^ (String.concat "," (List.map show_pretty_tp tup)) ^ ")"
 
+and show_pretty_function args =
+  if List.length args == 0 then "()" else
+  "(" ^ (String.concat "->" (List.map show_pretty_tp args)) ^ ")"
+
 and show_pretty_tp typ = 
   match typ with
   | TPrim prim -> show_pretty_t_prim prim
   | TArray arr -> sprintf "%s[]" (show_pretty_tp arr)
   | TNtuple tup -> show_pretty_tuple tup    
-  | TFun (args, ret) -> sprintf "%s -> %s" (show_pretty_tuple args) (show_pretty_tp ret)
+  | TFun types -> show_pretty_function types
   | TClass cname -> cname
   | TDummy -> "DUMMY"
   | TInvalid -> "INVALID"
-
 
 let show_pretty_op_bin op = 
   match op with

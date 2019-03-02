@@ -39,8 +39,8 @@
 %token END INVALID
 
 
-(* now some associativity annotations to prevent shift-reduce conflicts *)
-
+(* now some precedence and associativity annotations to 
+prevent shift-reduce conflicts *)
 %left AND_EQ XOR_EQ OR_EQ BIT_LEFT_EQ BIT_RIGHT_EQ
 %left EQ ADD_EQ SUBTRACT_EQ EXPONENT_EQ MULTIPLY_EQ DIVIDE_EQ MOD_EQ 
 %right QUESTION COLON
@@ -57,12 +57,6 @@
 %left BIT_LEFT BIT_RIGHT
 %left MULTIPLY DIVIDE MOD
 %left EXPONENT
-
-
-
-
-
-
 
 %start <Ast.stat> main
 %{ open Ast %}
@@ -88,7 +82,7 @@ let matched_dummy :=
 
 let open_s :=
   | wrap_stat (IF; ~ = e; ~ = s; <SIf>)
-  | wrap_stat (IF; ~ = e; ~ = matched_s; ELSE; ~ = open_s; <SIfElse>)   
+  | wrap_stat (IF; ~ = e; ~ = matched_s; ELSE; ~ = open_s; <SIfElse>)      
 
 let other_s :=
   | wrap_stat (~ = e; <SExpr>)
@@ -102,7 +96,7 @@ let t :=
   | ~ = prim_t; <TPrim>
   | LEFT_BRACKET; ~ = t; RIGHT_BRACKET; <TArray>
   | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; <TNtuple>
-  | LESS; ~ = list_delimited(t, COMMA); GREATER; RIGHTARROW; ~ = t; <TFun>
+  | SEMICOLON; ~ = list_delimited(t, RIGHTARROW); <TFun>
   | ~ = VARIABLE; <TClass>
 
 let prim_t ==

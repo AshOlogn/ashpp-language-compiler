@@ -57,7 +57,7 @@ let rec check_expr (ast, table) =
       if not complete && (ret_type != (TPrim TVoid)) then 
         (incomplete_return_error ast.st_loc ast.en_loc ret_type)
       else
-        let fun_type = TFun ((List.map fst args), ret_type) in
+        let fun_type = TFun ((List.map fst args) @ [ret_type]) in
         ({ast with value = EFunction (args, body''); typ = fun_type }, table)
 
 (* this function checks whether a function returns a value of a required type *)
