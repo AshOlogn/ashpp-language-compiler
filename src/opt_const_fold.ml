@@ -144,6 +144,7 @@ let rec const_fold_expr (ast, table) =
       (* replace body field with the folded one *)
       let (body', _) = const_fold_stat (body, !ref_table) in 
       ({ast with value = EFunction (args, body'); }, table)
+    | _ -> (ast, table)
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
 and const_fold_stat_list stat_list table = 

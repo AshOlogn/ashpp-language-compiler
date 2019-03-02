@@ -94,7 +94,7 @@ let other_s :=
 (* Type grammar *)
 let t :=
   | ~ = prim_t; <TPrim>
-  | LEFT_BRACKET; ~ = t; RIGHT_BRACKET; <TArray>
+  | LEFT_BRACKET; ~ = t; RIGHT_BRACKET; <TList>
   | LEFT_PAREN; ~ = list_delimited(t, COMMA); RIGHT_PAREN; <TNtuple>
   | SEMICOLON; ~ = list_delimited(t, RIGHTARROW); <TFun>
   | ~ = VARIABLE; <TClass>

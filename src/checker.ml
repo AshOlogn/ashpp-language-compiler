@@ -59,6 +59,7 @@ let rec check_expr (ast, table) =
       else
         let fun_type = TFun ((List.map fst args) @ [ret_type]) in
         ({ast with value = EFunction (args, body''); typ = fun_type }, table)
+  | _ -> (ast, table)
 
 (* this function checks whether a function returns a value of a required type *)
 (* assumes function body is checked for type/scope errors *)

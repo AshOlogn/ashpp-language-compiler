@@ -6,7 +6,7 @@ type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 (** Recursive data type representation *)
 type tp =
   | TPrim of t_prim
-  | TArray of tp
+  | TList of tp
   | TNtuple of tp list  (* logically (type1, type2, ..., type_n) *)
   | TFun of tp list     (* logically: type1 -> type2 -> ... -> type_return *)
   | TClass of string
@@ -43,10 +43,14 @@ type op_un = ONeg | OPos | OBitNot | OLogNot
 (* For statement nodes, type is always dummy since statements don't return values *)
 type 'a node = { value: 'a; typ: tp; st_loc: Lexing.position; en_loc: Lexing.position;} 
 
-type fun_arg = tp * string
+type fun_param = tp * string
+
+type fun_arg = 
+  | ArgLabeled of string * expr 
+  | ArgUnlabeled of expr 
 
 (* Expression node, wrapped and unwrapped *)
-type expr = raw_expr node 
+and expr = raw_expr node 
 and raw_expr = 
   | ELitInt of int
   | ELitFloat of float
@@ -57,7 +61,8 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
-  | EFunction of fun_arg list * stat
+  | EFunction of fun_param list * stat
+  | EFunctionCall of string * fun_arg list 
 
 (* Statement node *)
 and stat = raw_stat node

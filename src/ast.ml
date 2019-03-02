@@ -11,7 +11,7 @@ type t_prim = TInt | TChar | TFloat | TString | TBool | TVoid
 (* Invalid used in type-checker to signify type error *)
 type tp =
   | TPrim of t_prim
-  | TArray of tp
+  | TList of tp
   | TNtuple of tp list  (* logically (type1, type2, ..., type_n) *)
   | TFun of tp list     (* logically: type1 -> type2 -> ... -> type_return *)
   | TClass of string
@@ -47,11 +47,15 @@ type op_un = ONeg | OPos | OBitNot | OLogNot
 (* For statement nodes, type is always dummy since statements don't return values *)
 type 'a node = { value: 'a; typ: tp; st_loc: Lexing.position; en_loc: Lexing.position;} 
 
-type fun_arg = tp * string
+type fun_param = tp * string
 [@@deriving show]
 
+type fun_arg = 
+  | ArgLabeled of string * expr 
+  | ArgUnlabeled of expr 
+
 (* Expression node, wrapped and unwrapped *)
-type expr = raw_expr node 
+and expr = raw_expr node 
 and raw_expr = 
   | ELitInt of int
   | ELitFloat of float
@@ -62,7 +66,8 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
-  | EFunction of fun_arg list * stat
+  | EFunction of fun_param list * stat
+  | EFunctionCall of string * fun_arg list
 
 (* Statement node *)
 and stat = raw_stat node
@@ -98,7 +103,7 @@ and show_pretty_function args =
 and show_pretty_tp typ = 
   match typ with
   | TPrim prim -> show_pretty_t_prim prim
-  | TArray arr -> sprintf "%s[]" (show_pretty_tp arr)
+  | TList l -> sprintf "%s[]" (show_pretty_tp l)
   | TNtuple tup -> show_pretty_tuple tup    
   | TFun types -> show_pretty_function types
   | TClass cname -> cname
@@ -126,7 +131,7 @@ let show_pretty_op_un op =
 
 (* "show" printing utilities for expressions, and statements *)
 let rec show_raw_expr ex =
-  match ex with
+  (match ex with
   | ELitInt v           -> sprintf "(Ast.ELitInt %d)" v
   | ELitFloat f         -> sprintf "(Ast.ELitFloat %f)" f
   | ELitChar c          -> sprintf "(Ast.ELitChar %c)" c
@@ -146,7 +151,15 @@ let rec show_raw_expr ex =
       in
       sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr ex)
   | EFunction (args, body) -> sprintf "(Ast.EFunction [%s], [%s])" 
-      (String.concat ", " (List.map show_fun_arg args)) (show_stat body)
+      (String.concat ", " (List.map show_fun_param args)) (show_stat body)
+  | EFunctionCall (name, args) -> sprintf "(Ast.EFunctionCall [%s], [%s])" 
+      name (String.concat ", " (List.map show_fun_arg args)))
+
+and show_fun_arg arg = 
+  (match arg with 
+  | ArgLabeled (name, v) -> sprintf "%s:%s" name (show_expr v) 
+  | ArgUnlabeled v -> show_expr v)
+
 and show_expr ex = sprintf "%s" (show_raw_expr ex.value)
 
 and show_raw_stat st =
