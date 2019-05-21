@@ -112,7 +112,7 @@ let e == e_assign
 
 let e_assign :=
   | e_log_or
-  | wrap_expr (~ = VARIABLE; ~ = assign_op; ~ = e_log_or; <EAssign>)
+  | wrap_expr (~ = VARIABLE; ~ = assign_op; ~ = e_assign; <EAssign>)
 
 let e_log_or :=
   | e_log_and
