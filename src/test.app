@@ -1,5 +1,2 @@
-int y = 3
-
-;int->int->void x = function (int x, int y) {
-    int x = 5
-}
+float y = 1.5
+y *= 5.0

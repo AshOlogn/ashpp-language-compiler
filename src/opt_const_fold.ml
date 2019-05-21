@@ -71,7 +71,7 @@ let rec const_fold_expr (ast, table) =
       | _          -> ValueNone)
       in 
       let table'' = symtable_set table' name lit_value in
-      ({ ast with value = exp'.value; }, table'')
+      ({ ast with value = EAssign (name, OIden, exp'); }, table'')
     
     | _    -> 
       (match symtable_find table name with
@@ -96,7 +96,9 @@ let rec const_fold_expr (ast, table) =
             (match lit with 
             | ELitInt i ->
               let table'' = symtable_set table' name (ValueInt i) in
-              ({ ast with value = lit }, table'')
+              (* create new ast node from scratch for right-hand side*)
+              let rhs = EAssign (name, OIden, {exp with value = ELitInt i}) in 
+              ({ ast with value = rhs }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
 
@@ -111,7 +113,9 @@ let rec const_fold_expr (ast, table) =
             (match lit with 
             | ELitFloat f ->
               let table'' = symtable_set table' name (ValueFloat f) in
-              ({ ast with value = lit }, table'')
+              (* create new ast node from scratch for right-hand side*)
+              let rhs = EAssign (name, OIden, {exp with value = ELitFloat f}) in 
+              ({ ast with value = rhs }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
 
@@ -126,25 +130,27 @@ let rec const_fold_expr (ast, table) =
             (match lit with 
             | ELitChar c ->
               let table'' = symtable_set table' name (ValueChar c) in
-              ({ ast with value = lit }, table'')
+              (* create new ast node from scratch for right-hand side*)
+              let rhs = EAssign (name, OIden, {exp with value = ELitChar c}) in 
+              ({ ast with value = rhs }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
 
         | ValueString _ 
         | ValueBool _ -> (ast, table))))
     
-    | EFunction (args, body) -> 
-      (* first add args to the symbol table *)
-      let num_args = List.length args in
-      let ref_table = ref (symtable_new_scope table) in
-      for i = 0 to (num_args-1) do
-        let arg = List.nth args i in 
-        ref_table := symtable_add !ref_table (snd arg) ValueNone;
-      done;
-      (* replace body field with the folded one *)
-      let (body', _) = const_fold_stat (body, !ref_table) in 
-      ({ast with value = EFunction (args, body'); }, table)
-    | _ -> (ast, table)
+  | EFunction (args, body) -> 
+    (* first add args to the symbol table *)
+    let num_args = List.length args in
+    let ref_table = ref (symtable_new_scope table) in
+    for i = 0 to (num_args-1) do
+      let arg = List.nth args i in 
+      ref_table := symtable_add !ref_table (snd arg) ValueNone;
+    done;
+    (* replace body field with the folded one *)
+    let (body', _) = const_fold_stat (body, !ref_table) in 
+    ({ast with value = EFunction (args, body'); }, table)
+  | _ -> (ast, table)
 
 (* this function maps over list of statements, returning checked list and updated symtable *)
 and const_fold_stat_list stat_list table = 
