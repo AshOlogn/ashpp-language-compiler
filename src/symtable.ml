@@ -42,7 +42,15 @@ let rec symtable_find_scope symtable id scope =
 let symtable_find_within_scope symtable id = 
   Map.find symtable.table (id ^ "!" ^ (string_of_int symtable.scope))
 
+(* return the name of the variable with innermost scope number appended to it*)
+let rec symtable_get_scoped_name_scope symtable id scope =
+  if scope = -1 then None else
+  match (Map.find symtable.table (id ^ "!" ^ (string_of_int scope))) with 
+  | Some _ -> Some (id ^ "!" ^ (string_of_int scope))
+  | None -> symtable_get_scoped_name_scope symtable id (scope-1)
+
 (* the usual add/remove/find, scope taken to be current scope in symbol table *)
 let symtable_add symtable id value = symtable_add_scope symtable id value symtable.scope
 let symtable_find symtable id = symtable_find_scope symtable id symtable.scope
 let symtable_set symtable id value = symtable_set_scope symtable id value symtable.scope
+let symtable_get_scoped_name symtable id = symtable_get_scoped_name_scope symtable id symtable.scope

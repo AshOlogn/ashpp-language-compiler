@@ -2,7 +2,7 @@ open Ast
 
 (* Represents address of stored data or literal *)
 type address = 
-  | AddrVariable of string 
+  | AddrVariable of string * tp
   | AddrLitInt of int
   | AddrLitFloat of float 
   | AddrLitChar of char
