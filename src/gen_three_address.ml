@@ -87,6 +87,10 @@ and gen_three_address_stat ast temp label table =
         let (instructions', temp'', label'', _) = gen_three_address_stat body temp' (label'+1) table' in
         let instructions_final = 
             instructions @
+            [{label = -1; instruction = 
+                ThreeUnary (AddrVariable ("t" ^ (string_of_int temp''), TPrim TBool), OLogNot, addr)};
+            {label = -1; instruction = 
+                ThreeCondJump (AddrVariable ("t" ^ (string_of_int temp''), TPrim TBool), label1) }] @
             [{label = -1; instruction = ThreeCondJump (addr, label1)}] @
             instructions' @ 
             [{label=label1; instruction = ThreeNop}]
