@@ -4,7 +4,7 @@ open Ast
 type address = 
   | AddrVariable of string * tp
   | AddrLitInt of int
-  | AddrLitFloat of float 
+  | AddrLitFloat of float
   | AddrLitChar of char
   | AddrLitString of string
   | AddrLitBool of bool
@@ -18,15 +18,16 @@ type three_address =
   | ThreeBinary of address * address * op_bin * address
   | ThreeUnary of address * op_un * address
   | ThreeCopy of address * address
-  | ThreeJump of string
-  | ThreeCondJump of address * string
-  | ThreeCompJump of address * comparison * address * string
+  | ThreeJump of int
+  | ThreeCondJump of address * int
+  | ThreeCompJump of address * comparison * address * int
   | ThreeParam of address
   | ThreeFunctionCall of string * int
+  | ThreeNop
 [@@deriving show]
 
 (* Represents labeled three-address instruction *)
-type three_instruction = { label: string option; instruction: three_address;} 
+type three_instruction = { label: int; instruction: three_address;} 
 
 (* printing the instructions in a nicely-formatted way *)
 let show_three_instructions ins_list = 
@@ -34,11 +35,7 @@ let show_three_instructions ins_list =
   let i = ref 0 in 
   while !i < List.length ins_list do
     let {label = label; instruction=ins;} = List.nth ins_list !i in 
-    let l = (match label with 
-      | None -> "none"
-      | Some s -> s
-    ) in 
-    str := !str ^ l ^ ": " ^ (show_three_address ins) ^ "\n";
+    str := !str ^ (string_of_int label) ^ ": " ^ (show_three_address ins) ^ "\n";
     i := !i + 1;
   done;
   !str

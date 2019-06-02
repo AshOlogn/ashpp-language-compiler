@@ -44,9 +44,9 @@ let symtable_find_within_scope symtable id =
 
 (* return the name of the variable with innermost scope number appended to it*)
 let rec symtable_get_scoped_name_scope symtable id scope =
-  if scope = -1 then None else
+  if scope = -1 then raise (CoreError "couldn't find variable already declared in symtable") else
   match (Map.find symtable.table (id ^ "!" ^ (string_of_int scope))) with 
-  | Some _ -> Some (id ^ "!" ^ (string_of_int scope))
+  | Some _ -> id ^ "!" ^ (string_of_int scope)
   | None -> symtable_get_scoped_name_scope symtable id (scope-1)
 
 (* the usual add/remove/find, scope taken to be current scope in symbol table *)

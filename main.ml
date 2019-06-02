@@ -15,9 +15,9 @@ let fname = "src/test.app"
 let parse_with_error lexbuf =
   try
   let (stat, _) = check_stat ((Parser.main Lexer.read lexbuf), symtable_init) in
-  let (stat', _) = (const_fold_stat (stat, symtable_init)) in
-  let stat'' = prune_empty stat' in
-  let (three_ins, _, _) = gen_three_address_stat stat'' 0 0 in
+  (* let (stat', _) = (const_fold_stat (stat, symtable_init)) in *)
+  let stat'' = prune_empty stat in
+  let (three_ins, _, _, _) = gen_three_address_stat stat'' 0 0 symtable_init in
   (Printf.printf "%s\n" (show_stat stat''));
   (Printf.printf "%s" (show_three_instructions three_ins)) with
   | LexerError msg 
@@ -26,7 +26,6 @@ let parse_with_error lexbuf =
   | ReturnError msg -> Printf.printf "%s" msg
 
 let () = 
-  
   (* get buffer for source file *)
   let inb = In_channel.create fname in
   let lexbuf = Lexing.from_channel inb  in

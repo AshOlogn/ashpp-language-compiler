@@ -4,7 +4,7 @@ open Ast
 type address = 
   | AddrVariable of string * tp
   | AddrLitInt of int
-  | AddrLitFloat of float 
+  | AddrLitFloat of float
   | AddrLitChar of char
   | AddrLitString of string
   | AddrLitBool of bool
@@ -18,14 +18,16 @@ type three_address =
   | ThreeBinary of address * address * op_bin * address
   | ThreeUnary of address * op_un * address
   | ThreeCopy of address * address
-  | ThreeJump of string
-  | ThreeCondJump of address * string
-  | ThreeCompJump of address * comparison * address * string
+  | ThreeJump of int
+  | ThreeCondJump of address * int
+  | ThreeCompJump of address * comparison * address * int
   | ThreeParam of address
   | ThreeFunctionCall of string * int
+  | ThreeNop
 [@@deriving show]
 
 (* Represents labeled three-address instruction *)
-type three_instruction = { label: string option; instruction: three_address;}
+type three_instruction = { label: int; instruction: three_address;} 
 
-val show_three_instructions : three_instruction list -> string
+(* printing the instructions in a nicely-formatted way *)
+val show_three_instructions : three_instruction list -> string 
