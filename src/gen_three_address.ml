@@ -1,8 +1,17 @@
 open Ast
 open Symtable
 open Err
-open Opt_const_fold
 open Three_address
+
+type literal_value = 
+    | ValueInt of int
+    | ValueFloat of float
+    | ValueChar of char
+    | ValueString of string
+    | ValueBool of bool
+    | ValueFunction of fun_param list * stat
+    | ValueNone  
+
 
 let rec gen_three_address_expr ast temp label table = 
     match ast.value with 

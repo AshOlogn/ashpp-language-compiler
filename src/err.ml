@@ -43,6 +43,16 @@ let checker_binop_error spos epos op t1 t2 =
   in
     raise (TypeError (gen_err_format spos epos "Type" msg))
 
+let checker_function_numarg_error spos epos fname actual given =
+  let msg = sprintf "function %s takes only %d arguments but %d were provided" fname actual given in
+  raise (TypeError (gen_err_format spos epos "Type" msg)) 
+
+let checker_function_call_error spos epos name t =
+  let msg = sprintf "%s is of type %s and not a function and thus cannot be called" 
+    name (show_pretty_tp t) 
+  in
+    raise (TypeError (gen_err_format spos epos "Type" msg))  
+
 let while_cond_error spos epos typ =
   let msg = sprintf "'while' loop condition expression is of %s type, expected bool" (show_pretty_tp typ) in
   raise (TypeError (gen_err_format spos epos "Type" msg))

@@ -77,7 +77,7 @@ rule read = parse
   | float { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }
   | boolean { BOOL ((Lexing.lexeme lexbuf) = "true") }
   | '"' { read_string (Buffer.create 100) lexbuf }
-  | "function" { FUNCTION }
+  | "fun" { FUNCTION }
   | "for" { FOR } | "while" { WHILE } | "do" { DO } | "if" { IF } | "elif" { ELIF } | "else" { ELSE } | "break" { BREAK }
   | "switch" { SWITCH } | "case" { CASE } | "class" { CLASS } | "extends" { EXTENDS } | "fun" { FUN } | "return" { RETURN }
   | "new" { NEW } | "print" { PRINT } | "println" { PRINTLN } | "int" { INT_T } | "char" { CHAR_T } | "float" { FLOAT_T }

@@ -170,10 +170,16 @@ let e_atom :=
   | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
   | wrap_expr (~ = VARIABLE; <EVar>)
-  | wrap_expr (FUNCTION; LEFT_PAREN; ~ = list_delimited(fun_arg, COMMA); RIGHT_PAREN; ~ = s; <EFunction>) 
+  | wrap_expr (FUNCTION; LEFT_PAREN; ~ = list_delimited(fun_param, COMMA); RIGHT_PAREN; ~ = s; <EFunction>) 
+  | wrap_expr (~ = VARIABLE; LEFT_PAREN; ~ = list_delimited(fun_arg, COMMA); RIGHT_PAREN; <EFunctionCall>)
 
-let fun_arg :=
+
+let fun_param :=
   | x = t; y = VARIABLE; { (x, y) }
+
+let fun_arg := 
+  | ~ = VARIABLE; COLON; ~ = e; <ArgLabeled>
+  | ~ = e; <ArgUnlabeled>
 
 (* Operator token conversions *)
 let assign_op ==

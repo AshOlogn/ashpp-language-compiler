@@ -85,6 +85,15 @@ and raw_stat =
 let fst tup = let (x,_) = tup in x
 let snd tup = let (_,y) = tup in y
 
+(* Utility function to strip name from fun_arg list *)
+let strip_arg_names args = 
+  let strip_name arg = 
+    (match arg with 
+    | ArgLabeled (_, expr) -> expr
+    | ArgUnlabeled expr -> expr)
+  in
+  List.map strip_name args
+
 (* pretty printing of types and operators for use in error handling *)
 let show_pretty_t_prim typ = 
   match typ with

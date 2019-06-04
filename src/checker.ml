@@ -62,7 +62,44 @@ let rec check_expr (ast, table) =
       else
         let fun_type = TFun ((List.map fst args) @ [ret_type]) in
         ({ast with value = EFunction (args, body''); typ = fun_type }, table)
-  | _ -> (ast, table)
+  
+  | EFunctionCall (fname, args) -> 
+      let ftype = symtable_find table fname in
+      let num_args = List.length args in 
+      let stripped_args = strip_arg_names args in 
+      match ftype with 
+      | Some (TFun ftypes) -> 
+          let num_params = List.length ftypes in 
+          if num_params < num_args then 
+            checker_function_numarg_error ast.st_loc ast.en_loc fname num_params num_args 
+          else 
+            (* now evaluate all the arguments and make sure that they are correctly typed *)
+            let ref_table = ref table in 
+            for i = 0 to (num_args-1) do 
+              let (checked_arg, table') = check_expr ((List.nth stripped_args i), !ref_table) in 
+
+              (* evaluated arg and associated param must have same type *)
+              let curr_param_type = List.nth ftypes i in 
+              let arg_type =  checked_arg.typ in 
+              if not (equal_tp curr_param_type arg_type) then 
+                raise (CoreError "hello")
+              else 
+                ref_table := table';
+            done;
+
+            (* now calculate type of output, since partial function application is allowed *)
+            let rec list_suffix x_list n = 
+              if n = 0 then x_list else 
+              (match x_list with 
+              | (_ :: xs) -> list_suffix xs (n-1)
+              | [] ->  raise (CoreError "queried suffix longer than input list length"))
+            in
+            let ftype_suffix = list_suffix ftypes (List.length args) in 
+            (fupdate_expr ast (if (List.length ftype_suffix) = 1 then
+                (List.hd ftype_suffix) else (TFun ftype_suffix)), !ref_table) 
+
+      | Some t -> checker_function_call_error ast.st_loc ast.en_loc fname t 
+      | None ->  var_not_declared_error ast.st_loc ast.en_loc fname
 
 (* this function checks whether a function returns a value of a required type *)
 (* assumes function body is checked for type/scope errors *)

@@ -24,7 +24,8 @@ let parse_with_error lexbuf =
   | LexerError msg 
   | TypeError msg 
   | ScopeError msg 
-  | ReturnError msg -> Printf.printf "%s" msg
+  | ReturnError msg 
+  | CoreError msg -> Printf.printf "%s" msg
 
 let () = 
   (* get buffer for source file *)
