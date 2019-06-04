@@ -1,2 +1,2 @@
-;int->int x = function (int a) return 2*a
+;int->int x = function (int x) { return x }
 int y = x(5)

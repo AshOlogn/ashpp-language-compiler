@@ -43,12 +43,15 @@ let rec check_expr (ast, table) =
       | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
   | EFunction (args, body) -> 
     (* add all the function parameters to symbol table in new scope *)
-    (* TODO: make sure function args have unique names *)
     let num_args = List.length args in
     let ref_table = ref (symtable_new_scope table) in
     for i = 0 to (num_args-1) do
       let arg = List.nth args i in 
-      ref_table := symtable_add !ref_table (snd arg) (fst arg);
+      ref_table := 
+        (match symtable_find_within_scope !ref_table (snd arg) with 
+        | None -> symtable_add !ref_table (snd arg) (fst arg)
+        | Some _ -> var_mult_param_declared_error ast.st_loc ast.en_loc (snd arg))
+      ; 
     done;
     (* now check the function body *)
     let (body', _) = check_stat (body, !ref_table) in

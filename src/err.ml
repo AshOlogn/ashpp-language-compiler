@@ -63,6 +63,10 @@ let var_not_declared_error spos epos name =
 let var_mult_declared_error spos epos name = 
   raise (ScopeError (gen_err_format spos epos "Scope" (sprintf "variable %s already declared in this scope" name)))
 
+  let var_mult_param_declared_error spos epos name = 
+    raise (ScopeError (gen_err_format spos epos "Scope" 
+      (sprintf "variable %s already declared as parameter of this function" name)))
+
 (* static function errors *)
 let inconsistent_return_error spos epos typ_exp typ_ret = 
   let msg = sprintf "statement has return of type %s but function return type is %s" 
