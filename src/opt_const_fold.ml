@@ -1,5 +1,6 @@
 open Ast
 open Symtable
+open Err
 open Opt_const_fold_utils
 
 (* value type in symbol table that either holds a literal or expression marker *)
@@ -10,6 +11,7 @@ type literal_value =
   | ValueChar of char
   | ValueString of string
   | ValueBool of bool
+  | ValueFunction of fun_param list * stat
   | ValueNone
 
 (* this function evaluates constant expressions and variable substitutions to 
@@ -35,7 +37,9 @@ let rec const_fold_expr (ast, table) =
       | ValueFloat v -> ({ ast with value = ELitFloat v; typ = TPrim TFloat; }, table) 
       | ValueChar v -> ({ ast with value = ELitChar v; typ = TPrim TChar; }, table) 
       | ValueString v -> ({ ast with value = ELitString v; typ = TPrim TString; }, table) 
-      | ValueBool v -> ({ ast with value = ELitBool v; typ = TPrim TBool; }, table) 
+      | ValueBool v -> ({ ast with value = ELitBool v; typ = TPrim TBool; }, table)
+      | ValueFunction (param_list, stat) -> ({ ast with value = EFunction (param_list, stat); 
+          typ = TFun (List.map (fun (typ, _) -> typ) param_list); }, table) 
       | ValueNone -> (ast, table)))
   
   | EUnary (op, exp) -> 
@@ -68,6 +72,7 @@ let rec const_fold_expr (ast, table) =
       | ELitChar c -> ValueChar c
       | ELitString s -> ValueString s
       | ELitBool b -> ValueBool b
+      | EFunction (param_list, stat) -> ValueFunction (param_list, stat) 
       | _          -> ValueNone)
       in 
       let table'' = symtable_set table' name lit_value in
@@ -135,9 +140,9 @@ let rec const_fold_expr (ast, table) =
               ({ ast with value = rhs }, table'')
             (* this should never be called *)
             | _         -> (ast,table) ))
-
         | ValueString _ 
-        | ValueBool _ -> (ast, table))))
+        | ValueBool _ -> (ast, table)
+        | _ -> raise (CoreError "Error not caught in type-checking. Functions can't be multiplied."))))
     
   | EFunction (args, body) -> 
     (* first add args to the symbol table *)

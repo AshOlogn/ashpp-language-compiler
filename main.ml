@@ -18,8 +18,9 @@ let parse_with_error lexbuf =
   (* let (stat', _) = (const_fold_stat (stat, symtable_init)) in *)
   let stat'' = prune_empty stat in
   let (three_ins, _, _, _) = gen_three_address_stat stat'' 0 0 symtable_init in
+  let three_ins' = remove_redundant_nops three_ins in 
   (Printf.printf "%s\n" (show_stat stat''));
-  (Printf.printf "%s" (show_three_instructions three_ins)) with
+  (Printf.printf "%s" (show_three_instructions three_ins')) with
   | LexerError msg 
   | TypeError msg 
   | ScopeError msg 

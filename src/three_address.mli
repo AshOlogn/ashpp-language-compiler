@@ -22,7 +22,7 @@ type three_address =
   | ThreeCondJump of address * int
   | ThreeCompJump of address * comparison * address * int
   | ThreeParam of address
-  | ThreeFunctionCall of string * int
+  | ThreeFunctionCall of address * string * int
   | ThreeNop
 [@@deriving show]
 

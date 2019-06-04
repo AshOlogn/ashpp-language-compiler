@@ -1,5 +1,6 @@
 open Ast
 open Symtable
+open Err
 open Opt_const_fold
 open Three_address
 
@@ -47,6 +48,51 @@ let rec gen_three_address_expr ast temp label table =
             let new_ins1 = {label = -1; instruction=ThreeBinary (new_temp, AddrVariable (scoped_name, exp.typ), op, addr)} in 
             let new_ins2 = {label = -1; instruction=ThreeCopy (AddrVariable (scoped_name, exp.typ), new_temp)} in 
             (AddrVariable (scoped_name, exp.typ), instructions @ [new_ins1; new_ins2], temp'+1, label', table'))
+    (* | EFunction (param_list, stat) ->  *)
+        
+    | EFunctionCall (name, args) -> 
+        (* for calling foo x_1,...,x_n, we first declare parameters in reverse order and then call the function *)
+        (* first evaluate all the argument expressions and generate their three-address code *)
+        let rec eval_args args temp label table = 
+            (match args with 
+            | (x :: xs) ->
+                let expr = 
+                    (match x with 
+                    | ArgLabeled (_, expr) -> expr
+                    | ArgUnlabeled expr -> expr)
+                in 
+                let (addr, instructions, temp', label', table') = gen_three_address_expr expr temp label table in
+                let (addrs, instructions', temp'', label'', table'') = eval_args xs temp' label' table' in
+                ({ label = -1; instruction = ThreeParam addr } :: addrs, instructions @ instructions', temp'', label'', table'')
+            | [] -> ([], [], temp, label, table))
+        in
+        let (param_instructions, instructions, temp', label', table') = eval_args args temp label table in
+
+        (* figure out type of the result, since partial function application is allowed *)
+        let fun_type =  symtable_find table name in 
+        let output_type = 
+            (match fun_type with
+            | Some (ValueFunction (fun_params, _)) -> 
+                (* get rid of function arg names and just keep types *)
+                let rec list_suffix x_list n = 
+                    if n = 0 then x_list else 
+                    (match x_list with 
+                    | (_ :: xs) -> list_suffix xs (n-1)
+                    | [] ->  raise (CoreError "queried suffix longer than input list length"))
+                in
+                let tlist_suffix = list_suffix (List.map (fun (typ, _) -> typ) fun_params) (List.length args) in 
+                if (List.length tlist_suffix) = 1 then (List.hd tlist_suffix) else (TFun tlist_suffix)
+            | Some _ 
+            | None -> raise (CoreError "declared function not found in symtable"))
+        in
+        let scoped_name = symtable_get_scoped_name table name in 
+        let fun_addr = AddrVariable ("t" ^ (string_of_int temp'), output_type) in
+        let instructions_final = 
+            instructions @ 
+            (List.rev_append param_instructions 
+            [{label = -1; instruction = ThreeFunctionCall (fun_addr, scoped_name, (List.length args))}])
+        in
+        (fun_addr, instructions_final, temp'+1, label', table')
     | _ -> (AddrVariable ("dummy", TDummy), [], 1, 1, table)
 
 and gen_three_address_stat_list stat_list temp label table = 
@@ -125,7 +171,19 @@ and gen_three_address_stat ast temp label table =
             {label = -1; instruction = 
                 ThreeCondJump (AddrVariable ("t" ^ (string_of_int temp''), TPrim TBool), label2)}] @
             instructions' @
+            [{label = -1; instruction = ThreeJump label1}] @
             [{label = label2; instruction = ThreeNop }]
         in
         (instructions_final, temp''+1, label'', table')
     | _ -> ([], temp, label, table)
+
+(* this function passes through the three-address code and removes dummy labeled nops *)
+let rec remove_redundant_nops three_addr = 
+    match three_addr with 
+    | (({label = label1; instruction = ThreeNop} as x) :: ({label = label2; instruction = ins} as y) :: xs) ->
+        if label2 < 0 then 
+            ({label = label1; instruction = ins} :: (remove_redundant_nops xs))  
+        else 
+            x :: (remove_redundant_nops (y :: xs))
+    | (x :: xs) -> x :: (remove_redundant_nops xs)
+    | [] -> []
