@@ -87,9 +87,6 @@ val snd : ('a * 'b) -> 'b
 (** Utility function to strip name from fun_arg list *)
 val strip_arg_names : fun_arg list -> expr list   
 
-(* Utility function to get type of fun_env *)
-val tp_of_fun_env : fun_env -> tp
-
 (** pretty printing of primitive type *)
 val show_pretty_t_prim : t_prim -> string 
 

@@ -96,10 +96,6 @@ let strip_arg_names args =
   in
   List.map strip_name args
 
-(* Utility function to get type of fun_env *)
-let tp_of_fun_env { params=params; body=_; } = 
-    TFun (List.map (fun (typ, _) -> typ) params)
-
 (* pretty printing of types and operators for use in error handling *)
 let show_pretty_t_prim typ = 
   match typ with

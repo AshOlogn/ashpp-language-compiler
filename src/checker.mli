@@ -5,6 +5,8 @@ open Symtable
 (* returns checked expression node *)
 val check_expr : (expr * tp symtable) -> (expr * tp symtable)
 
+val check_return : stat -> (tp * bool * stat)
+
 (* this function maps over list of statements, returning checked list and updated symtable *)
 val check_stat_list : stat list -> tp symtable -> (stat list * tp symtable)
 

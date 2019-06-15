@@ -1,8 +1,9 @@
 open Ast
 open Symtable
-open Format
 open Err
+open Checker
 open Three_address
+open Printf
 
 type literal_value = 
     | ValueInt of int
@@ -12,6 +13,15 @@ type literal_value =
     | ValueBool of bool
     | ValueFunction of fun_env
     | ValueNone
+
+(* Utility function to get type of fun_env *)
+let tp_of_fun_env { params=params; body=body; } = 
+    let (ret_type, _, _) = check_return body in 
+    let param_types = List.map (fun (typ, _) -> typ) params in 
+    if ret_type = TPrim TVoid then 
+      TFun param_types
+    else
+      TFun (param_types @ [ret_type])
 
 let rec gen_three_address_expr ast temp label table = 
     match ast.value with 
@@ -86,15 +96,17 @@ let rec gen_three_address_expr ast temp label table =
             (match fun_type with
             | Some (ValueFunction fenv) -> 
                 (* get rid of function arg names and just keep types *)
-                let fun_params = fenv.params in 
-                let rec list_suffix x_list n = 
-                    if n = 0 then x_list else 
-                    (match x_list with 
-                    | (_ :: xs) -> list_suffix xs (n-1)
-                    | [] ->  raise (CoreError (sprintf "queried suffix longer than input list length\n")))
-                in
-                let tlist_suffix = list_suffix (List.map (fun (typ, _) -> typ) fun_params) (List.length args) in 
-                if (List.length tlist_suffix) = 1 then (List.hd tlist_suffix) else (TFun tlist_suffix)
+                (match tp_of_fun_env fenv with 
+                | TFun fun_types -> 
+                    let rec list_suffix x_list n = 
+                        if n = 0 then x_list else 
+                        (match x_list with 
+                        | (_ :: xs) -> list_suffix xs (n-1)
+                        | [] ->  raise (CoreError (sprintf "queried suffix longer than input list length\n")))
+                    in
+                    let tlist_suffix = list_suffix fun_types (List.length args) in 
+                    if (List.length tlist_suffix) = 1 then (List.hd tlist_suffix) else (TFun tlist_suffix)
+                | _ -> TInvalid)
             | Some _ 
             | None -> raise (CoreError (sprintf "declared function not found in symtable\n")))
         in
@@ -126,7 +138,6 @@ and gen_three_address_stat ast temp label table =
         let (instructions, temp', label', table'') = gen_three_address_stat_list stat_list temp label table' in 
         (instructions, temp', label', symtable_leave_scope table'')
     | SDecl (typ, name, expr) ->
-        Printf.printf "declaring %s\n" name;
         let (addr, instructions, temp', label', table') = gen_three_address_expr expr temp label table in 
         let var_value =
             (match  expr.value with
