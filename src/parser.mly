@@ -170,9 +170,8 @@ let e_atom :=
   | wrap_expr (~ = STRING; <ELitString>)
   | wrap_expr (~ = BOOL; <ELitBool>)
   | wrap_expr (~ = VARIABLE; <EVar>)
-  | wrap_expr (FUNCTION; LEFT_PAREN; ~ = list_delimited(fun_param, COMMA); RIGHT_PAREN; ~ = s; <EFunction>) 
+  | wrap_expr (FUNCTION; LEFT_PAREN; params = list_delimited(fun_param, COMMA); RIGHT_PAREN; stat = s; { EFunction {params=params; body=stat} }) 
   | wrap_expr (~ = VARIABLE; LEFT_PAREN; ~ = list_delimited(fun_arg, COMMA); RIGHT_PAREN; <EFunctionCall>)
-
 
 let fun_param :=
   | x = t; y = VARIABLE; { (x, y) }

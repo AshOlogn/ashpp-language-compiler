@@ -11,7 +11,7 @@ type literal_value =
   | ValueChar of char
   | ValueString of string
   | ValueBool of bool
-  | ValueFunction of fun_param list * stat
+  | ValueFunction of fun_env
   | ValueNone
 
 (* this function evaluates constant expressions and variable substitutions to 
@@ -38,8 +38,8 @@ let rec const_fold_expr (ast, table) =
       | ValueChar v -> ({ ast with value = ELitChar v; typ = TPrim TChar; }, table) 
       | ValueString v -> ({ ast with value = ELitString v; typ = TPrim TString; }, table) 
       | ValueBool v -> ({ ast with value = ELitBool v; typ = TPrim TBool; }, table)
-      | ValueFunction (param_list, stat) -> ({ ast with value = EFunction (param_list, stat); 
-          typ = TFun (List.map (fun (typ, _) -> typ) param_list); }, table) 
+      | ValueFunction fenv -> ({ ast with value = EFunction fenv; 
+          typ = TFun (List.map (fun (typ, _) -> typ) fenv.params); }, table) 
       | ValueNone -> (ast, table)))
   
   | EUnary (op, exp) -> 
@@ -72,7 +72,7 @@ let rec const_fold_expr (ast, table) =
       | ELitChar c -> ValueChar c
       | ELitString s -> ValueString s
       | ELitBool b -> ValueBool b
-      | EFunction (param_list, stat) -> ValueFunction (param_list, stat) 
+      | EFunction fenv -> ValueFunction fenv 
       | _          -> ValueNone)
       in 
       let table'' = symtable_set table' name lit_value in
@@ -144,17 +144,21 @@ let rec const_fold_expr (ast, table) =
         | ValueBool _ -> (ast, table)
         | _ -> raise (CoreError "Error not caught in type-checking. Functions can't be multiplied."))))
     
-  | EFunction (args, body) -> 
+  | EFunction fenv -> 
+    
+    let params = fenv.params in 
+    let body = fenv.body in 
+
     (* first add args to the symbol table *)
-    let num_args = List.length args in
+    let num_params = List.length params in
     let ref_table = ref (symtable_new_scope table) in
-    for i = 0 to (num_args-1) do
-      let arg = List.nth args i in 
-      ref_table := symtable_add !ref_table (snd arg) ValueNone;
+    for i = 0 to (num_params-1) do
+      let param = List.nth params i in 
+      ref_table := symtable_add !ref_table (snd param) ValueNone;
     done;
     (* replace body field with the folded one *)
     let (body', _) = const_fold_stat (body, !ref_table) in 
-    ({ast with value = EFunction (args, body'); }, table)
+    ({ast with value = EFunction {params=params; body=body'}; }, table)
   | _ -> (ast, table)
 
 (* this function maps over list of statements, returning checked list and updated symtable *)

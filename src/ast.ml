@@ -54,6 +54,8 @@ type fun_arg =
   | ArgLabeled of string * expr 
   | ArgUnlabeled of expr 
 
+and fun_env = { params: fun_param list; body: stat; }
+
 (* Expression node, wrapped and unwrapped *)
 and expr = raw_expr node 
 and raw_expr = 
@@ -66,7 +68,7 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
-  | EFunction of fun_param list * stat
+  | EFunction of fun_env
   | EFunctionCall of string * fun_arg list
 
 (* Statement node *)
@@ -93,6 +95,10 @@ let strip_arg_names args =
     | ArgUnlabeled expr -> expr)
   in
   List.map strip_name args
+
+(* Utility function to get type of fun_env *)
+let tp_of_fun_env { params=params; body=_; } = 
+    TFun (List.map (fun (typ, _) -> typ) params)
 
 (* pretty printing of types and operators for use in error handling *)
 let show_pretty_t_prim typ = 
@@ -159,8 +165,7 @@ let rec show_raw_expr ex =
         | _    -> "invalid_assign_op"
       in
       sprintf "(Ast.EAssign %s %s %s)" var_name assign_str (show_expr ex)
-  | EFunction (args, body) -> sprintf "(Ast.EFunction [%s], [%s])" 
-      (String.concat ", " (List.map show_fun_param args)) (show_stat body)
+  | EFunction fenv -> sprintf "(Ast.EFunction %s)" (show_fun_env fenv)
   | EFunctionCall (name, args) -> sprintf "(Ast.EFunctionCall [%s], [%s])" 
       name (String.concat ", " (List.map show_fun_arg args)))
 
@@ -168,6 +173,10 @@ and show_fun_arg arg =
   (match arg with 
   | ArgLabeled (name, v) -> sprintf "%s:%s" name (show_expr v) 
   | ArgUnlabeled v -> show_expr v)
+
+and show_fun_env fenv = 
+  sprintf "((%s) -> %s)"
+    (String.concat ", " (List.map show_fun_param fenv.params)) (show_stat fenv.body)
 
 and show_expr ex = sprintf "%s" (show_raw_expr ex.value)
 

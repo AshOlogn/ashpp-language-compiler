@@ -1,5 +1,6 @@
 open Ast
 open Symtable
+open Format
 open Err
 open Three_address
 
@@ -9,9 +10,8 @@ type literal_value =
     | ValueChar of char
     | ValueString of string
     | ValueBool of bool
-    | ValueFunction of fun_param list * stat
-    | ValueNone  
-
+    | ValueFunction of fun_env
+    | ValueNone
 
 let rec gen_three_address_expr ast temp label table = 
     match ast.value with 
@@ -22,6 +22,10 @@ let rec gen_three_address_expr ast temp label table =
     | EVar name -> 
         let scoped_name = symtable_get_scoped_name table name in
         (AddrVariable (scoped_name, ast.typ), [], temp, label, table)
+    | EFunction fenv -> 
+        (* just treat function as some data and store in a temp variable *)
+        (* allocation details will be dealt with later on *)
+        (AddrLitFun fenv, [], temp, label, table)
     | EUnary (op, exp) -> 
         let (addr, instructions, temp', label', table') = gen_three_address_expr exp temp label table in 
         let new_temp = AddrVariable ("t" ^ (string_of_int temp'), exp.typ) in 
@@ -46,6 +50,7 @@ let rec gen_three_address_expr ast temp label table =
                 | ELitChar c    -> ValueChar c
                 | ELitBool b    -> ValueBool b
                 | ELitString s  -> ValueString s
+                | EFunction fenv -> ValueFunction fenv
                 | _             -> ValueNone)
             in
             let table'' = symtable_set table' name new_value in
@@ -56,9 +61,7 @@ let rec gen_three_address_expr ast temp label table =
             let new_temp = AddrVariable ("t" ^ (string_of_int temp'), exp.typ) in 
             let new_ins1 = {label = -1; instruction=ThreeBinary (new_temp, AddrVariable (scoped_name, exp.typ), op, addr)} in 
             let new_ins2 = {label = -1; instruction=ThreeCopy (AddrVariable (scoped_name, exp.typ), new_temp)} in 
-            (AddrVariable (scoped_name, exp.typ), instructions @ [new_ins1; new_ins2], temp'+1, label', table'))
-    (* | EFunction (param_list, stat) ->  *)
-        
+            (AddrVariable (scoped_name, exp.typ), instructions @ [new_ins1; new_ins2], temp'+1, label', table'))        
     | EFunctionCall (name, args) -> 
         (* for calling foo x_1,...,x_n, we first declare parameters in reverse order and then call the function *)
         (* first evaluate all the argument expressions and generate their three-address code *)
@@ -81,18 +84,19 @@ let rec gen_three_address_expr ast temp label table =
         let fun_type =  symtable_find table name in 
         let output_type = 
             (match fun_type with
-            | Some (ValueFunction (fun_params, _)) -> 
+            | Some (ValueFunction fenv) -> 
                 (* get rid of function arg names and just keep types *)
+                let fun_params = fenv.params in 
                 let rec list_suffix x_list n = 
                     if n = 0 then x_list else 
                     (match x_list with 
                     | (_ :: xs) -> list_suffix xs (n-1)
-                    | [] ->  raise (CoreError "queried suffix longer than input list length"))
+                    | [] ->  raise (CoreError (sprintf "queried suffix longer than input list length\n")))
                 in
                 let tlist_suffix = list_suffix (List.map (fun (typ, _) -> typ) fun_params) (List.length args) in 
                 if (List.length tlist_suffix) = 1 then (List.hd tlist_suffix) else (TFun tlist_suffix)
             | Some _ 
-            | None -> raise (CoreError "declared function not found in symtable"))
+            | None -> raise (CoreError (sprintf "declared function not found in symtable\n")))
         in
         let scoped_name = symtable_get_scoped_name table name in 
         let fun_addr = AddrVariable ("t" ^ (string_of_int temp'), output_type) in
@@ -122,6 +126,7 @@ and gen_three_address_stat ast temp label table =
         let (instructions, temp', label', table'') = gen_three_address_stat_list stat_list temp label table' in 
         (instructions, temp', label', symtable_leave_scope table'')
     | SDecl (typ, name, expr) ->
+        Printf.printf "declaring %s\n" name;
         let (addr, instructions, temp', label', table') = gen_three_address_expr expr temp label table in 
         let var_value =
             (match  expr.value with
@@ -130,6 +135,7 @@ and gen_three_address_stat ast temp label table =
             | ELitChar c    -> ValueChar c
             | ELitBool b    -> ValueBool b
             | ELitString s  -> ValueString s
+            | EFunction fenv -> ValueFunction fenv
             | _             -> ValueNone)
         in
         let table'' = symtable_add table' name var_value in 

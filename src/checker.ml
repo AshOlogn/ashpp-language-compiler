@@ -41,16 +41,20 @@ let rec check_expr (ast, table) =
       match final_type with
       | TInvalid -> checker_binop_error exp'.st_loc exp'.en_loc op typ exp'.typ
       | _        -> ({ ast with value = EAssign (name, op, exp'); typ = final_type }, table'))
-  | EFunction (args, body) -> 
+  | EFunction fenv -> 
+    (* extract args and body from function environment *)
+    let params = fenv.params in 
+    let body = fenv.body in
+
     (* add all the function parameters to symbol table in new scope *)
-    let num_args = List.length args in
+    let num_params = List.length params in
     let ref_table = ref (symtable_new_scope table) in
-    for i = 0 to (num_args-1) do
-      let arg = List.nth args i in 
+    for i = 0 to (num_params-1) do
+      let param = List.nth params i in 
       ref_table := 
-        (match symtable_find_within_scope !ref_table (snd arg) with 
-        | None -> symtable_add !ref_table (snd arg) (fst arg)
-        | Some _ -> var_mult_param_declared_error ast.st_loc ast.en_loc (snd arg))
+        (match symtable_find_within_scope !ref_table (snd param) with 
+        | None -> symtable_add !ref_table (snd param) (fst param)
+        | Some _ -> var_mult_param_declared_error ast.st_loc ast.en_loc (snd param))
       ; 
     done;
     (* now check the function body *)
@@ -60,8 +64,8 @@ let rec check_expr (ast, table) =
       if not complete && (ret_type != (TPrim TVoid)) then 
         (incomplete_return_error ast.st_loc ast.en_loc ret_type)
       else
-        let fun_type = TFun ((List.map fst args) @ [ret_type]) in
-        ({ast with value = EFunction (args, body''); typ = fun_type }, table)
+        let fun_type = TFun ((List.map fst params) @ [ret_type]) in
+        ({ast with value = EFunction {params=params; body=body''}; typ = fun_type }, table)
   
   | EFunctionCall (fname, args) -> 
       let ftype = symtable_find table fname in

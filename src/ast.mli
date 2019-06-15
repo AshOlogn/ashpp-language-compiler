@@ -49,6 +49,8 @@ type fun_arg =
   | ArgLabeled of string * expr 
   | ArgUnlabeled of expr 
 
+and fun_env = { params: fun_param list; body: stat; }
+
 (* Expression node, wrapped and unwrapped *)
 and expr = raw_expr node 
 and raw_expr = 
@@ -61,7 +63,7 @@ and raw_expr =
   | EUnary of op_un * expr
   | EBinary of expr * op_bin * expr
   | EAssign of string * op_bin * expr
-  | EFunction of fun_param list * stat
+  | EFunction of fun_env
   | EFunctionCall of string * fun_arg list 
 
 (* Statement node *)
@@ -85,6 +87,9 @@ val snd : ('a * 'b) -> 'b
 (** Utility function to strip name from fun_arg list *)
 val strip_arg_names : fun_arg list -> expr list   
 
+(* Utility function to get type of fun_env *)
+val tp_of_fun_env : fun_env -> tp
+
 (** pretty printing of primitive type *)
 val show_pretty_t_prim : t_prim -> string 
 
@@ -102,6 +107,9 @@ val show_pretty_op_un : op_un -> string
 
 (** pretty printing of raw expression *)
 val show_raw_expr : raw_expr -> string
+
+(** pretty printing of raw expression *)
+val show_fun_env : fun_env -> string
 
 (** pretty printing of expression node *)
 val show_expr : expr -> string
